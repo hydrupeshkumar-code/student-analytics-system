@@ -77,8 +77,10 @@ def _rubric(db, owner, title, desc, levels, criteria):
 def seed_demo():
     rng = random.Random(2026)
     with SessionLocal() as db:
-        if db.query(User.id).first():
-            sys.exit("Database is not empty — demo data can only be loaded into a fresh database.")
+        # demo data may join an install that only has its first admin, but never real academic data
+        if db.query(Course.id).first() or db.query(Program.id).first() or \
+                db.query(User.id).filter(User.email.like("%@saap.edu")).first():
+            sys.exit("Courses, programs or demo accounts already exist — demo data can only be loaded into a fresh install.")
 
         def user(name, email, role, pw, dept=None):
             u = User(name=name, email=email, role=role, department=dept, password_hash=hash_password(pw))
@@ -259,10 +261,16 @@ def bootstrap():
     import os
 
     with SessionLocal() as db:
-        empty = db.query(User.id).first() is None
-    if empty and os.getenv("SEED_DEMO", "").lower() in ("1", "true", "yes"):
-        print("bootstrap: empty database, loading demo data")
+        fresh = (db.query(Course.id).first() is None and db.query(Program.id).first() is None
+                 and db.query(User.id).filter(User.email.like("%@saap.edu")).first() is None)
+        users = db.query(User.id).count()
+    if fresh and os.getenv("SEED_DEMO", "").lower() in ("1", "true", "yes"):
+        print("bootstrap: no courses yet, loading demo data (demo logins: admin@saap.edu / Admin@123)")
         seed_demo()
+
+    if users == 0 and not os.getenv("INITIAL_ADMIN_EMAIL") and not os.getenv("SEED_DEMO"):
+        print("bootstrap: WARNING — no user accounts exist. Set INITIAL_ADMIN_EMAIL and INITIAL_ADMIN_PASSWORD "
+              "(or SEED_DEMO=true) and redeploy, otherwise nobody can sign in.")
 
     email = os.getenv("INITIAL_ADMIN_EMAIL", "").strip().lower()
     password = os.getenv("INITIAL_ADMIN_PASSWORD", "")
