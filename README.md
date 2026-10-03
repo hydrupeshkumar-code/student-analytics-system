@@ -21,7 +21,6 @@ SAAP brings the **CP** (Continuous Process: quizzes, assignments, practicals, at
 | **O3** Role-based dashboards | Faculty dashboard + course workspace, Student portal, Admin console |
 | **O4** CO/PO attainment reports for NAAC/NBA | `services/attainment.py`, `services/reports.py`, PDF/Excel downloads |
 | **O5** Predictive early warning with documented accuracy | `services/prediction.py`, Early-warning tab, Admin → Early-warning model |
-
 ## Features
 
 **Faculty**
