@@ -1,0 +1,23 @@
+# dependencies & builds
+node_modules/
+frontend/dist/
+.venv/
+**/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# local data, models and secrets — never commit
+.env
+*.env
+!.env.example
+**/.env
+backend/saap.db
+*.db
+*.sqlite3
+backend/ml_models/
+legacy-prototype/instance/
+
+# local tooling
+.claude/
+.vscode/

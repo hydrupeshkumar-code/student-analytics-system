@@ -1,0 +1,24 @@
+const P = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+const svg = (d: React.ReactNode) => () => <svg viewBox="0 0 24 24" {...P} aria-hidden>{d}</svg>;
+
+export const IconHome = svg(<><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /></>);
+export const IconBook = svg(<><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z" /><path d="M4 19V5" /></>);
+export const IconRubric = svg(<><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 10h18M9 4v16" /></>);
+export const IconUsers = svg(<><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0113 0" /><path d="M16 4.5a3.5 3.5 0 010 7M21.5 20a6.5 6.5 0 00-4-6" /></>);
+export const IconLayers = svg(<><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 13l9 5 9-5" /></>);
+export const IconTarget = svg(<><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" /></>);
+export const IconBrain = svg(<><path d="M12 5a3 3 0 00-5.6 1.5A3 3 0 005 12a3 3 0 002 5 3 3 0 005 1V5z" /><path d="M12 5a3 3 0 015.6 1.5A3 3 0 0119 12a3 3 0 01-2 5 3 3 0 01-5 1" /></>);
+export const IconGear = svg(<><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-2.9 1.2V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-2.9-1.2l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.7 1.7 0 003 15H3a2 2 0 110-4h.1a1.7 1.7 0 001.2-2.9l-.1-.1a2 2 0 112.8-2.8l.1.1A1.7 1.7 0 009 4.6V4a2 2 0 114 0v.1a1.7 1.7 0 002.9 1.2l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 001.2 2.9h.1a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></>);
+export const IconLog = svg(<><path d="M8 6h13M8 12h13M8 18h13" /><path d="M3 6h.01M3 12h.01M3 18h.01" /></>);
+export const IconChart = svg(<><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>);
+export const IconMenu = svg(<><path d="M3 6h18M3 12h18M3 18h18" /></>);
+export const IconMoon = svg(<path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" />);
+export const IconSun = svg(<><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>);
+export const IconLogout = svg(<><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><path d="M16 17l5-5-5-5M21 12H9" /></>);
+export const IconKey = svg(<><circle cx="7.5" cy="15.5" r="4.5" /><path d="M10.7 12.3L21 2M17 6l3 3M14 9l2 2" /></>);
+export const IconAlert = svg(<><path d="M12 3l9.5 17h-19z" /><path d="M12 10v4M12 17.5h.01" /></>);
+export const IconClipboard = svg(<><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4h6v3H9zM9 12h6M9 16h4" /></>);
+export const IconCap = svg(<><path d="M2 9l10-5 10 5-10 5z" /><path d="M6 11v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5" /></>);
+export const IconStar = svg(<path d="M12 3l2.8 5.8 6.2.9-4.5 4.4 1 6.3L12 17.5 6.5 20.4l1-6.3L3 9.7l6.2-.9z" />);
+export const IconTrend = svg(<><path d="M3 17l6-6 4 4 8-8" /><path d="M15 7h6v6" /></>);
+export const IconDownload = svg(<><path d="M12 4v11M7 10l5 5 5-5" /><path d="M4 20h16" /></>);

@@ -1,0 +1,42 @@
+# Production-style stack: MySQL 8 + the SAAP app (API + React UI on one port).
+# 1. cp .env.example .env  and set strong secrets
+# 2. docker compose up -d --build
+# 3. docker compose exec app python -m app.cli create-admin --email you@college.edu --name "Exam Cell"
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: saap
+      MYSQL_USER: saap
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: mysql+pymysql://saap:${MYSQL_PASSWORD}@db:3306/saap?charset=utf8mb4
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8000}
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - ml-models:/app/backend/ml_models
+
+volumes:
+  mysql-data:
+  ml-models:

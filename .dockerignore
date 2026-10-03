@@ -1,0 +1,10 @@
+**/node_modules
+**/.venv
+**/__pycache__
+frontend/dist
+backend/saap.db
+backend/ml_models
+backend/.env
+.env
+legacy-prototype
+.git
