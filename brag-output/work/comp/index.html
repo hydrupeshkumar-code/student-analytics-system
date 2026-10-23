@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SAAP brag</title>
+<!-- The project's own stylesheet and fonts, served from the repo root -->
+<link rel="stylesheet" href="/frontend/src/styles.css">
+<style>
+  @font-face { font-family: "Poppins"; font-weight: 400; src: url(/frontend/node_modules/@fontsource/poppins/files/poppins-latin-400-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Poppins"; font-weight: 500; src: url(/frontend/node_modules/@fontsource/poppins/files/poppins-latin-500-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Poppins"; font-weight: 600; src: url(/frontend/node_modules/@fontsource/poppins/files/poppins-latin-600-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Poppins"; font-weight: 700; src: url(/frontend/node_modules/@fontsource/poppins/files/poppins-latin-700-normal.woff2) format("woff2"); }
+
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); font-family: var(--font-sans); color: var(--text); }
+  .wash { position: absolute; inset: -80px; background:
+      radial-gradient(1300px 760px at -8% -10%, rgba(47, 196, 131, 0.20), transparent 60%),
+      radial-gradient(1100px 760px at 108% -4%, rgba(138, 117, 255, 0.16), transparent 60%),
+      radial-gradient(1000px 760px at -6% 108%, rgba(255, 128, 171, 0.14), transparent 60%),
+      radial-gradient(1100px 760px at 104% 104%, rgba(255, 196, 120, 0.16), transparent 60%); }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+  .abs { position: absolute; }
+  .w { display: inline-block; white-space: pre; will-change: transform, opacity; }
+  .cap { font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; }
+  .cap em, #hook2 em { font-style: normal; color: var(--brand); }
+  .cap em.bad { color: var(--critical); }
+  .shot { display: block; border-radius: 18px; box-shadow: 0 2px 4px rgba(29,36,51,.05), 0 40px 90px -30px rgba(29,36,51,.38); background: #fff; }
+  .chip { display: inline-flex; align-items: center; gap: 10px; height: 46px; padding: 0 20px; border-radius: 999px; font-size: 20px; font-weight: 600; background: var(--brand-soft); color: var(--brand-text); }
+  .chip .dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  #cursor { position: absolute; left: 0; top: 0; width: 44px; height: 44px; z-index: 50; opacity: 0; filter: drop-shadow(0 6px 10px rgba(0,0,0,.25)); }
+  .ring { position: absolute; border-radius: 999px; border: 4px solid var(--brand); opacity: 0; pointer-events: none; z-index: 49; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="wash" id="wash"></div>
+
+  <!-- 1 HOOK -->
+  <section class="scene" id="s1">
+    <div class="abs cap" id="hook" style="left:0; right:0; top:330px; text-align:center; font-size:128px;"></div>
+    <div class="abs" id="hook2" style="left:0; right:0; top:660px; text-align:center; font-size:52px; font-weight:500; color:var(--text-2); letter-spacing:-0.01em;"></div>
+  </section>
+
+  <!-- 2 REVEAL -->
+  <section class="scene" id="s2">
+    <div class="abs" id="rv-brand" style="left:140px; top:250px; display:flex; gap:26px; align-items:center;">
+      <div class="brand-mark" style="width:104px; height:104px; border-radius:30px; font-size:52px;">S</div>
+      <div><div class="brand-name" style="font-size:60px;">SAAP</div><div class="brand-sub" style="font-size:24px; margin-top:6px;">Student Assessment &amp; Analytics</div></div>
+    </div>
+    <div class="abs cap" id="rv-line" style="left:140px; top:440px; width:860px; font-size:76px;"></div>
+    <div class="abs login-hero" id="rv-panel" style="left:1060px; top:170px; width:740px; height:740px; border-radius:36px; padding:0; justify-content:center; align-items:center;">
+      <div style="position:absolute; left:60px; top:64px;"><span class="badge" style="background:rgba(255,255,255,.18); color:#fff; height:40px; font-size:19px; padding:0 18px;">Continuous evaluation, unified</span></div>
+      <div id="rv-spec" style="position:absolute; left:39px; top:150px; width:400px; zoom:1.55;">
+        <div class="specimen">
+          <div class="spread" style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:15px; font-weight:600;">CS301 · Software Engineering</span>
+            <span class="badge" style="background:#e3f6ec; color:#157a50;">2026-27</span>
+          </div>
+          <div class="row-l hd"><span>Component</span><span>Score</span><span>Weight</span></div>
+          <div class="row-l rl"><span>Quiz average</span><span>72%</span><span>30</span></div>
+          <div class="row-l rl"><span>Assignment · rubric</span><span>81%</span><span>20</span></div>
+          <div class="row-l rl"><span>Lab evaluation · rubric</span><span>76%</span><span>25</span></div>
+          <div class="row-l rl"><span>Attendance</span><span>88%</span><span>10</span></div>
+          <div class="row-l rl" style="border-bottom:none; font-weight:600;"><span>CP total</span><span id="rv-total">77.4%</span><span></span></div>
+          <span class="stamp" id="rv-stamp">Low risk</span>
+        </div>
+      </div>
+      <div id="rv-illus" style="position:absolute; right:30px; top:22px; width:300px; height:175px;"></div>
+    </div>
+  </section>
+
+  <!-- 3 RUBRIC -->
+  <section class="scene" id="s3">
+    <div class="abs cap" id="rb-cap" style="left:120px; top:330px; width:600px; font-size:80px;"></div>
+    <div class="abs" id="rb-wrap" style="left:760px; top:150px; width:1060px; height:755px; perspective:2200px;">
+      <div id="rb-card" style="position:relative; width:1060px; height:755px; transform-origin:50% 50%;">
+        <img class="shot rb-img" src="../shots/rubric-0.png" style="position:absolute; left:0; top:0; width:1060px; height:755px;"><img class="shot rb-img" src="../shots/rubric-1.png" style="position:absolute; left:0; top:0; width:1060px; height:755px; opacity:0;"><img class="shot rb-img" src="../shots/rubric-2.png" style="position:absolute; left:0; top:0; width:1060px; height:755px; opacity:0;"><img class="shot rb-img" src="../shots/rubric-3.png" style="position:absolute; left:0; top:0; width:1060px; height:755px; opacity:0;"><img class="shot rb-img" src="../shots/rubric-4.png" style="position:absolute; left:0; top:0; width:1060px; height:755px; opacity:0;">
+        <div id="rb-glow" style="position:absolute; left:922px; top:84px; width:128px; height:60px; border-radius:18px; box-shadow:0 0 0 4px var(--brand), 0 0 40px 6px rgba(47,196,131,.45); opacity:0;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 EARLY WARNING -->
+  <section class="scene" id="s4">
+    <div class="abs cap" id="rk-cap" style="left:120px; top:118px; width:1700px; font-size:76px;"></div>
+    <div class="abs" id="rk-rows" style="left:120px; top:400px; width:1680px;">
+      <div style="position:relative; border-radius:20px; overflow:hidden; background:#fff; box-shadow:0 2px 4px rgba(29,36,51,.05), 0 40px 90px -30px rgba(29,36,51,.38);" id="rk-table">
+        <img src="../shots/risk-head.png" style="display:block; width:1680px;" id="rk-head">
+        <img src="../shots/risk-row-0.png" class="rk-row" style="display:block; width:1680px;">
+        <img src="../shots/risk-row-1.png" class="rk-row" style="display:block; width:1680px;">
+        <img src="../shots/risk-row-2.png" class="rk-row" style="display:block; width:1680px;">
+        <img src="../shots/risk-row-3.png" class="rk-row" style="display:block; width:1680px;">
+        <div id="rk-mark" style="position:absolute; left:1045px; top:66px; height:94px; width:580px; background:rgba(255, 196, 120, 0.42); mix-blend-mode:multiply; border-radius:8px; transform-origin:0 50%;"></div>
+        <div id="rk-ring" style="position:absolute; left:485px; top:80px; width:96px; height:66px; border-radius:16px; box-shadow:0 0 0 4px var(--critical), 0 0 30px 4px rgba(229,83,75,.35);"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 ATTAINMENT -->
+  <section class="scene" id="s5">
+    <div class="abs cap" id="at-cap" style="left:120px; top:110px; width:1700px; font-size:76px;"></div>
+    <div class="abs" id="at-cards" style="left:120px; top:290px; width:1536px;">
+      <img class="shot" src="../shots/attain-card-0.png" style="width:1536px;" id="at-c0">
+      <img class="shot" src="../shots/attain-card-1.png" style="width:1536px; margin-top:22px;" id="at-c1">
+    </div>
+    <div class="abs" id="at-btnpress" style="border-radius:12px; background:rgba(0,0,0,.14); opacity:0;"></div>
+    <div class="abs" id="at-pdfwrap" style="left:840px; top:300px; width:1000px;">
+      <img class="shot" id="at-pdf" src="../shots/pdfhi-1.png" style="width:1000px; border-radius:10px; transform-origin:50% 100%;">
+      <div class="abs chip" id="at-chip" style="left:-40px; top:-30px; background:#fff; color:var(--brand-text); box-shadow:0 16px 40px -16px rgba(29,36,51,.45);"><span class="dot"></span>attainment.pdf</div>
+    </div>
+  </section>
+
+  <!-- 6 OUTRO -->
+  <section class="scene" id="s6">
+    <div class="abs" id="ou-fan" style="left:0; top:0; width:1920px; height:1080px;">
+      <div class="abs ou-d" style="left:120px; top:600px; width:820px;"><img class="shot" src="../shots/fac-dash.png" style="width:820px;"><div class="abs chip" style="left:24px; top:-22px; background:#fff; box-shadow:0 12px 30px -14px rgba(29,36,51,.4);">Faculty</div></div>
+      <div class="abs ou-d" style="left:550px; top:560px; width:820px;"><img class="shot" src="../shots/stu-dash.png" style="width:820px;"><div class="abs chip" style="left:24px; top:-22px; background:#fff; box-shadow:0 12px 30px -14px rgba(29,36,51,.4); color:var(--accent-text);">Students</div></div>
+      <div class="abs ou-d" style="left:980px; top:600px; width:820px;"><img class="shot" src="../shots/adm-dash.png" style="width:820px;"><div class="abs chip" style="left:24px; top:-22px; background:#fff; box-shadow:0 12px 30px -14px rgba(29,36,51,.4); color:var(--warning-text);">Exam cell</div></div>
+    </div>
+    <div class="abs" id="ou-brand" style="left:0; right:0; top:110px; display:flex; justify-content:center; gap:26px; align-items:center;">
+      <div class="brand-mark" style="width:110px; height:110px; border-radius:32px; font-size:56px;">S</div>
+      <div class="brand-name" style="font-size:96px; letter-spacing:-0.03em;">SAAP</div>
+    </div>
+    <div class="abs cap" id="ou-line" style="left:0; right:0; top:262px; text-align:center; font-size:60px;"></div>
+    <div class="abs" id="ou-url" style="left:0; right:0; top:368px; text-align:center;">
+      <span class="chip" style="background:#fff; color:var(--text); font-weight:500; height:56px; font-size:24px; padding:0 26px; box-shadow:0 14px 36px -18px rgba(29,36,51,.45);">
+        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        github.com/hydrupeshkumar-code/student-analytics-system
+      </span>
+    </div>
+  </section>
+
+  <svg id="cursor" viewBox="0 0 24 24"><path d="M4 2.5 L4 19.5 L8.6 15.4 L11.6 22 L14.6 20.7 L11.7 14.2 L18 14.2 Z" fill="#1d2433" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>
+  <div class="ring" id="ring"></div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, k) => a + (b - a) * k;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eOut = (k) => 1 - Math.pow(1 - k, 3);
+const eInOut = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+const eBack = (k) => { const c = 1.6; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+const eIn = (k) => k * k * k;
+
+// Word-by-word text. html segments: [text, className?]; "|" forces a line break.
+function words(el, segs) {
+  el.innerHTML = "";
+  const list = [];
+  for (const [text, cls] of segs) {
+    for (const part of text.split(/(\s+)/)) {
+      if (!part) continue;
+      if (part === "|") { el.appendChild(document.createElement("br")); continue; }
+      if (/^\s+$/.test(part)) { el.appendChild(document.createTextNode(" ")); continue; }
+      const s = document.createElement(cls ? "em" : "span");
+      if (cls && cls !== "em") s.className = cls;
+      s.classList.add("w");
+      s.textContent = part;
+      el.appendChild(s);
+      list.push(s);
+    }
+  }
+  return list;
+}
+function animWords(list, t, start, step = 0.07, dur = 0.45, dy = 46) {
+  list.forEach((w, i) => {
+    const k = eOut(prog(t, start + i * step, start + i * step + dur));
+    w.style.opacity = k;
+    w.style.transform = `translateY(${(1 - k) * dy}px)`;
+    w.style.filter = k < 1 ? `blur(${(1 - k) * 8}px)` : "none";
+  });
+}
+
+const hookW = words($("hook"), [["Who's going to "], ["fail", "bad"], [" | this semester?"]]);
+const hook2W = words($("hook2"), [["Find out "], ["before the exam.", "em"]]);
+const rvW = words($("rv-line"), [["Every quiz, rubric and exam. "], ["One clear record", "em"], [" per student."]]);
+const rbW = words($("rb-cap"), [["Click a level. | "], ["The marks add themselves.", "em"]]);
+const rkW = words($("rk-cap"), [["Spots "], ["at-risk", "bad"], [" students before the exam. | And says "], ["why.", "em"]]);
+const atW = words($("at-cap"), [["NAAC/NBA attainment report? "], ["One click.", "em"]]);
+const ouW = words($("ou-line"), [["Built for faculty, students and "], ["the exam cell.", "em"]]);
+
+// Scene windows [in, out]; each fades/moves out before the next comes in (dip, not double exposure).
+const S = { s1: [0, 3.0], s2: [3.0, 6.5], s3: [6.5, 10.5], s4: [10.5, 14.5], s5: [14.5, 18.0], s6: [18.0, 99] };
+function sceneOpacity(id, t) {
+  const [a, b] = S[id];
+  if (t < a || t >= b) return 0;
+  const fin = id === "s1" ? 1 : eOut(prog(t, a, a + 0.18));
+  const fout = 1 - eIn(prog(t, b - 0.22, b));
+  return Math.min(fin, fout);
+}
+function exitShift(id, t) { const [, b] = S[id]; return eIn(prog(t, b - 0.25, b)); }
+
+// Cursor path helper: keyframes [{t, x, y}]
+function cursorAt(t, keys) {
+  if (t <= keys[0].t) return keys[0];
+  for (let i = 0; i < keys.length - 1; i++) {
+    const a = keys[i], b = keys[i + 1];
+    if (t <= b.t) { const k = eInOut(prog(t, a.t, b.t)); return { x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k) }; }
+  }
+  return keys[keys.length - 1];
+}
+function clickRing(t, clicks) {
+  // clicks: [{t, x, y}] -> ring expanding for 0.45s after each click
+  const ring = $("ring");
+  let shown = false;
+  for (const c of clicks) {
+    const k = prog(t, c.t, c.t + 0.45);
+    if (t >= c.t && k < 1) {
+      const r = lerp(14, 60, eOut(k));
+      ring.style.left = c.x - r + "px"; ring.style.top = c.y - r + "px";
+      ring.style.width = ring.style.height = r * 2 + "px";
+      ring.style.opacity = (1 - k) * 0.9;
+      ring.style.borderColor = c.color || "var(--brand)";
+      shown = true;
+    }
+  }
+  if (!shown) ring.style.opacity = 0;
+}
+
+// Rubric geometry: modal shot is 1000x712 css px, shown at 1060 wide.
+const RB = { x: 760, y: 150, s: 1.06 };
+const rbCells = [[347, 242], [526.7, 321], [347, 400], [526.7, 479.5]].map(([x, y]) => ({ x: RB.x + x * RB.s, y: RB.y + y * RB.s }));
+const rbClicks = [7.0, 7.5, 8.0, 8.5];
+const rbScale = (t) => 1 + 0.05 * eInOut(prog(t, 6.9, 10.5)) + 0.018 * eBack(prog(t, 8.5, 8.8)) - 0.018 * prog(t, 8.8, 9.4);
+const rbC = { x: RB.x + 530, y: RB.y + 377.5 };
+const rbAt = (i, t) => { const s = rbScale(t); return { x: rbC.x + (rbCells[i].x - rbC.x) * s, y: rbC.y + (rbCells[i].y - rbC.y) * s }; };
+// Attainment button: card-0 is 1280 css wide, shown at 1536 (x1.2)
+const AT = { x: 120, y: 290, s: 1.2 };
+const atBtn = { x: AT.x + 204.5 * AT.s, y: AT.y + 92.8 * AT.s };
+const atClick = 15.5;
+
+window.render = function (t) {
+  // background drift
+  $("wash").style.transform = `translate(${Math.sin(t * 0.35) * 40}px, ${Math.cos(t * 0.28) * 30}px) scale(${1.04 + Math.sin(t * 0.2) * 0.02})`;
+
+  for (const id of Object.keys(S)) $(id).style.opacity = sceneOpacity(id, t);
+  let cur = null, clicks = [];
+
+  // 1 HOOK
+  animWords(hookW, t, 0.1, 0.11, 0.5, 60);
+  animWords(hook2W, t, 1.3, 0.09, 0.45, 30);
+  { const k = exitShift("s1", t); $("s1").style.transform = `translateY(${-k * 60}px) scale(${1 + 0.02 * eOut(prog(t, 0, 3))})`; }
+
+  // 2 REVEAL
+  {
+    const kb = eBack(prog(t, 3.0, 3.45));
+    $("rv-brand").style.opacity = clamp(kb * 1.5);
+    $("rv-brand").style.transform = `translateY(${(1 - kb) * 40}px) scale(${0.85 + 0.15 * kb})`;
+    animWords(rvW, t, 3.1, 0.035, 0.42, 40);
+    const kp = eOut(prog(t, 3.05, 3.7));
+    $("rv-panel").style.transform = `translateX(${(1 - kp) * 260}px) rotate(${(1 - kp) * 4}deg)`;
+    $("rv-panel").style.opacity = kp;
+    const ks = eBack(prog(t, 3.35, 3.85));
+    $("rv-spec").style.transform = `translateY(${(1 - ks) * 60}px)`;
+    $("rv-spec").style.opacity = clamp(ks * 1.4);
+    document.querySelectorAll("#rv-spec .rl").forEach((r, i) => {
+      const k = eOut(prog(t, 3.6 + i * 0.12, 3.95 + i * 0.12));
+      r.style.opacity = k; r.style.transform = `translateX(${(1 - k) * 24}px)`;
+    });
+    const tot = eOut(prog(t, 3.9, 4.9));
+    $("rv-total").textContent = (77.4 * tot).toFixed(1) + "%";
+    const kst = eBack(prog(t, 4.9, 5.25));
+    $("rv-stamp").style.transform = `scale(${kst})`;
+    $("rv-stamp").style.opacity = clamp(kst);
+    const ki = eOut(prog(t, 3.6, 4.2));
+    $("rv-illus").style.opacity = ki;
+    $("rv-illus").style.transform = `translateY(${(1 - ki) * 40}px) translateY(${Math.sin(t * 2.2) * 4}px)`;
+    const ke = exitShift("s2", t);
+    $("s2").style.transform = `translateX(${-ke * 80}px)`;
+  }
+
+  // 3 RUBRIC
+  {
+    animWords(rbW, t, 6.55, 0.07, 0.45, 40);
+    const kc = eOut(prog(t, 6.5, 7.0));
+    $("rb-card").style.transform = `translateX(${(1 - kc) * 200}px) rotateY(${(1 - kc) * -18}deg) scale(${rbScale(t)})`;
+    $("rb-card").style.opacity = kc;
+    let n = 0; rbClicks.forEach((c) => { if (t >= c) n++; });
+    document.querySelectorAll(".rb-img").forEach((im, i) => { im.style.opacity = i <= n ? 1 : 0; });
+    const kg = prog(t, 8.5, 8.75), kgo = prog(t, 10.0, 10.3);
+    $("rb-glow").style.opacity = eOut(kg) * (1 - kgo);
+    if (t >= 6.5 && t < 10.5) {
+      cur = cursorAt(t, [
+        { t: 6.75, x: 1500, y: 1020 },
+        { t: 6.95, ...rbAt(0, t) }, { t: 7.0, ...rbAt(0, t) },
+        { t: 7.45, ...rbAt(1, t) }, { t: 7.5, ...rbAt(1, t) },
+        { t: 7.95, ...rbAt(2, t) }, { t: 8.0, ...rbAt(2, t) },
+        { t: 8.45, ...rbAt(3, t) }, { t: 8.5, ...rbAt(3, t) },
+        { t: 9.3, x: 1560, y: 960 },
+      ]);
+      clicks = rbClicks.map((c, i) => ({ t: c, ...rbAt(i, c) }));
+    }
+    const ke = exitShift("s3", t);
+    $("s3").style.transform = `translateY(${-ke * 50}px)`;
+  }
+
+  // 4 EARLY WARNING
+  {
+    animWords(rkW, t, 10.55, 0.05, 0.42, 40);
+    const kt = eOut(prog(t, 10.55, 10.95));
+    $("rk-table").style.opacity = kt;
+    $("rk-table").style.transform = `translateY(${(1 - kt) * 50}px)`;
+    $("rk-head").style.opacity = kt;
+    // the card grows row by row with the rows, so it never sits empty
+    const rowH = [110.4, 110.4, 111.7, 88.1];
+    let h = 57.8;
+    document.querySelectorAll(".rk-row").forEach((r, i) => {
+      const k = eOut(prog(t, 10.75 + i * 0.2, 11.2 + i * 0.2));
+      r.style.opacity = k; r.style.transform = `translateX(${(1 - k) * 140}px)`;
+      h += rowH[i] * eOut(prog(t, 10.75 + i * 0.2, 11.0 + i * 0.2));
+    });
+    $("rk-table").style.clipPath = `inset(0 0 ${Math.max(0, 478.4 - h)}px 0 round 20px)`;
+    const km = eInOut(prog(t, 12.6, 13.2));
+    $("rk-mark").style.transform = `scaleX(${km})`;
+    $("rk-mark").style.opacity = km > 0 ? 1 : 0;
+    const kr = eBack(prog(t, 12.1, 12.45));
+    $("rk-ring").style.opacity = clamp(kr);
+    $("rk-ring").style.transform = `scale(${0.6 + 0.4 * kr})`;
+    const ke = exitShift("s4", t);
+    $("s4").style.transform = `translateY(${-ke * 50}px)`;
+  }
+
+  // 5 ATTAINMENT
+  {
+    animWords(atW, t, 14.55, 0.06, 0.42, 40);
+    const k0 = eOut(prog(t, 14.55, 15.0)), k1 = eOut(prog(t, 14.7, 15.15));
+    $("at-c0").style.opacity = k0; $("at-c0").style.transform = `translateY(${(1 - k0) * 50}px)`;
+    $("at-c1").style.opacity = k1; $("at-c1").style.transform = `translateY(${(1 - k1) * 50}px)`;
+    const press = prog(t, atClick - 0.04, atClick + 0.16);
+    const bp = $("at-btnpress");
+    bp.style.left = AT.x + 115.7 * AT.s + "px"; bp.style.top = AT.y + 73.8 * AT.s + "px";
+    bp.style.width = 177.6 * AT.s + "px"; bp.style.height = 38 * AT.s + "px";
+    bp.style.opacity = t >= atClick - 0.04 && press < 1 ? Math.sin(press * Math.PI) * 0.8 : 0;
+    const kp = eOut(prog(t, 15.7, 16.35));
+    const settle = eInOut(prog(t, 16.35, 18.0));
+    $("at-pdfwrap").style.opacity = clamp(kp * 2);
+    $("at-pdf").style.transform = `translateY(${(1 - kp) * 820 - settle * 10}px) rotate(${lerp(-9, -2.5, kp) + settle * 0.8}deg) scale(${lerp(0.82, 1, kp)})`;
+    const kc = eBack(prog(t, 16.15, 16.5));
+    $("at-chip").style.opacity = clamp(kc);
+    $("at-chip").style.transform = `translateY(${(1 - kp) * 820}px) scale(${kc})`;
+    if (t >= 14.5 && t < 18.0) {
+      cur = cursorAt(t, [
+        { t: 14.85, x: 980, y: 1060 },
+        { t: 15.4, x: atBtn.x + 10, y: atBtn.y + 6 },
+        { t: 15.5, x: atBtn.x + 10, y: atBtn.y + 6 },
+        { t: 16.2, x: atBtn.x - 30, y: atBtn.y + 40 },
+      ]);
+      clicks = [{ t: atClick, x: atBtn.x + 10, y: atBtn.y + 6 }];
+    }
+    const ke = exitShift("s5", t);
+    $("s5").style.transform = `translateY(${-ke * 50}px)`;
+  }
+
+  // 6 OUTRO
+  {
+    const kb = eBack(prog(t, 18.05, 18.5));
+    $("ou-brand").style.opacity = clamp(kb * 1.5);
+    $("ou-brand").style.transform = `translateY(${(1 - kb) * 40}px) scale(${0.85 + 0.15 * kb})`;
+    animWords(ouW, t, 18.2, 0.05, 0.42, 36);
+    const ku = eOut(prog(t, 18.6, 19.0));
+    $("ou-url").style.opacity = ku; $("ou-url").style.transform = `translateY(${(1 - ku) * 24}px)`;
+    const rot = [-7, 0, 7], dx = [-30, 0, 30];
+    document.querySelectorAll(".ou-d").forEach((d, i) => {
+      const k = eOut(prog(t, 18.1 + [0.1, 0, 0.2][i], 18.8 + [0.1, 0, 0.2][i]));
+      const drift = eInOut(prog(t, 18.8, 21.5));
+      d.style.opacity = clamp(k * 1.5);
+      d.style.zIndex = i === 1 ? 2 : 1;
+      d.style.transform = `translate(${dx[i] * drift}px, ${(1 - k) * 420 - drift * 16}px) rotate(${rot[i] * k}deg)`;
+    });
+  }
+
+  // cursor + click rings
+  const cEl = $("cursor");
+  if (cur) {
+    let press = 0;
+    for (const c of clicks) { const k = prog(t, c.t - 0.05, c.t + 0.12); if (k > 0 && k < 1) press = Math.max(press, Math.sin(k * Math.PI)); }
+    cEl.style.opacity = 1;
+    cEl.style.transform = `translate(${cur.x - 10}px, ${cur.y - 6}px) scale(${1 - press * 0.16})`;
+  } else cEl.style.opacity = 0;
+  clickRing(t, clicks);
+};
+
+// Readiness: illustration SVG is the app's real markup.
+window.ready = (async () => {
+  $("rv-illus").innerHTML = await (await fetch("../shots/illus.svg")).text();
+  const svg = $("rv-illus").querySelector("svg"); svg.setAttribute("width", "300"); svg.setAttribute("height", "175");
+  // preload every image
+  const srcs = [...document.images].map((i) => i.src);
+  for (let i = 0; i <= 4; i++) srcs.push(new URL(`../shots/rubric-${i}.png`, location.href).href);
+  await Promise.all(srcs.map((s) => new Promise((res) => { const im = new Image(); im.onload = im.onerror = res; im.src = s; im.decode?.().then(res, res); })));
+  await document.fonts.ready;
+  await Promise.all(["400", "500", "600", "700"].map((w) => document.fonts.load(`${w} 40px Poppins`)));
+  window.render(0);
+  return true;
+})();
+</script>
+</body>
+</html>
