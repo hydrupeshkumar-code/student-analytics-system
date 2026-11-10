@@ -67,7 +67,13 @@ def assessment_pct(a: Assessment, s: Score | None) -> tuple[float | None, float 
 def build_gradebook(db: Session, course: Course, student_ids: list[int] | None = None,
                     student_view: bool = False) -> dict:
     cfg = settings_service.get_all(db)
-    visible = CLOSED if student_view else COUNTED
+
+    def visible(a: Assessment) -> bool:
+        if not student_view:
+            return a.status in COUNTED
+        # attendance is a running register, so students see it while it is still being kept
+        return a.status in CLOSED or (a.component == Component.attendance.value
+                                      and a.status == AssessmentStatus.in_progress.value)
 
     q = (db.query(User, StudentProfile.roll_no)
          .join(Enrollment, Enrollment.student_id == User.id)
@@ -79,7 +85,7 @@ def build_gradebook(db: Session, course: Course, student_ids: list[int] | None =
 
     assessments = [a for a in (db.query(Assessment).options(joinedload(Assessment.cos))
                                .filter(Assessment.course_id == course.id).order_by(Assessment.id).all())
-                   if a.status in visible]
+                   if visible(a)]
     # students only get a final result once every CP assessment has been closed
     marking_open = student_view and any(
         a.status not in CLOSED for a in db.query(Assessment.status).filter(Assessment.course_id == course.id,

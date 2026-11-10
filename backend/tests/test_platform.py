@@ -95,9 +95,30 @@ def test_rubric_scoring_and_gradebook(client, world):
     assert any("Attendance" in f for f in st[s2]["flags"])
     assert st[s3]["assessments"][str(quiz["id"])]["absent"] is True
 
-    # students see nothing until the assessment is completed
+    # students see nothing until the assessment is completed, except the running attendance register
     me = client.get(f"/api/me/courses/{cid}", headers=world["S1"]).json()
-    assert me["assessments"] == []
+    assert [a["id"] for a in me["assessments"]] == [att["id"]]
+    assert me["components"]["attendance"] == 75.0
+    assert me["final_pct"] is None and me["result_pending"] is True
+
+    # selections must belong to the assessment's rubric
+    other = client.post("/api/rubrics", headers=F, json={
+        "title": "Other", "levels": [{"label": "Hi", "points": 2}, {"label": "Lo", "points": 1}],
+        "criteria": [{"name": "Z", "weight": 1}]}).json()
+    r = client.put(f"/api/assessments/{asg['id']}/scores", headers=F, json={"scores": [
+        {"student_id": s2, "criteria": {str(ca): good, str(cb): good, str(other["criteria"][0]["id"]): good}}]})
+    assert r.status_code == 422
+    r = client.put(f"/api/assessments/{asg['id']}/scores", headers=F, json={"scores": [
+        {"student_id": s2, "criteria": {str(ca): good, str(cb): good, "999999": good}}]})
+    assert r.status_code == 422
+
+    # partial updates can leave fields out but not clear them
+    for body in ({"title": None}, {"weightage": None}, {"max_marks": None}):
+        assert client.patch(f"/api/assessments/{quiz['id']}", headers=F, json=body).status_code == 422
+    blank = _assessment(client, F, cid, title="Att2", component="attendance", max_marks=5, weightage=0, sessions_held=10)
+    assert client.patch(f"/api/assessments/{blank['id']}", headers=F, json={"sessions_held": None}).status_code == 422
+    assert client.patch(f"/api/assessments/{blank['id']}", headers=F, json={"rubric_id": rub["id"]}).status_code == 422
+    assert client.delete(f"/api/assessments/{blank['id']}", headers=F).status_code == 204
     client.post(f"/api/assessments/{asg['id']}/status", headers=F, json={"status": "completed"})
     me = client.get(f"/api/me/courses/{cid}", headers=world["S1"]).json()
     assert me["assessments"][0]["marks"] == 32.5
@@ -226,4 +247,50 @@ def test_user_import_and_audit(client, world):
 def test_csv_formula_injection_is_neutralised(client, world):
     from app.utils import _safe
     assert _safe("=HYPERLINK(1)").startswith("'")
+    assert _safe("\t=1+1").startswith("'")
     assert _safe("-5") == "-5"
+
+
+def test_xlsx_text_is_never_a_formula(client, world, db):
+    import io
+
+    from openpyxl import load_workbook
+
+    from app.models import User
+    u = db.query(User).filter_by(email="s1@x.edu").first()
+    u.name = '=HYPERLINK("http://example.invalid","x")'
+    db.commit()
+    r = client.get(f"/api/courses/{world['course']['id']}/gradebook.xlsx", headers=world["F"])
+    assert r.status_code == 200
+    cells = [c for row in load_workbook(io.BytesIO(r.content)).active.iter_rows() for c in row
+             if isinstance(c.value, str) and "HYPERLINK" in c.value]
+    assert cells and all(c.data_type == "s" for c in cells)
+
+
+def test_forged_forwarded_for_does_not_reset_throttle(client, world, monkeypatch):
+    from app.config import get_settings
+    monkeypatch.setattr(get_settings(), "trusted_proxy_hops", 1)
+    # the proxy appends the real client (198.51.100.7); the attacker controls everything before it
+    for i in range(5):
+        r = client.post("/api/auth/login", json={"email": "fac@x.edu", "password": "nope"},
+                        headers={"X-Forwarded-For": f"10.0.0.{i}, 198.51.100.7"})
+        assert r.status_code == 401
+    r = client.post("/api/auth/login", json={"email": "fac@x.edu", "password": "Passw0rd!"},
+                    headers={"X-Forwarded-For": "10.9.9.9, 198.51.100.7"})
+    assert r.status_code == 429
+    # with no trusted proxy the header is ignored entirely
+    monkeypatch.setattr(get_settings(), "trusted_proxy_hops", 0)
+    r = client.post("/api/auth/login", json={"email": "fac@x.edu", "password": "Passw0rd!"},
+                    headers={"X-Forwarded-For": "203.0.113.1"})
+    assert r.status_code == 200  # TestClient peer has no failures recorded
+
+
+def test_demo_admin_must_change_password_in_production(db, monkeypatch):
+    from app import cli
+    from app.config import get_settings
+    from app.models import User
+    monkeypatch.setattr(get_settings(), "environment", "production")
+    cli.seed_demo()
+    db.expire_all()
+    assert db.query(User).filter_by(email="admin@saap.edu").one().must_change_password is True
+    assert db.query(User).filter_by(email="neha@saap.edu").one().must_change_password is False

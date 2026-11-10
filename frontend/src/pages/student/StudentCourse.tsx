@@ -11,7 +11,7 @@ interface RubricView {
   criteria: { id: number; name: string; description: string | null; weight: number; descriptors: string[] | null; selected_level_id: number | null }[];
 }
 interface Item {
-  id: number; title: string; component: string; max_marks: number; weightage: number; due_date: string | null;
+  id: number; title: string; component: string; status: string; max_marks: number; weightage: number; due_date: string | null;
   marks: number | null; pct: number | null; absent: boolean; attended: number | null; sessions_held: number | null;
   feedback: string | null; class_average: number | null; rubric: RubricView | null;
 }
@@ -120,7 +120,7 @@ export default function StudentCourse() {
             <tbody>{data.assessments.map((a) => (
               <Fragment key={a.id}>
                 <tr style={{ cursor: a.rubric || a.feedback ? "pointer" : undefined }} onClick={() => setOpen(open === a.id ? null : a.id)}>
-                  <td><strong>{a.title}</strong>{a.feedback && <span className="badge badge-info" style={{ marginLeft: 6 }}>feedback</span>}</td>
+                  <td><strong>{a.title}</strong>{a.status === "in_progress" && <span className="badge" style={{ marginLeft: 6 }} title="Attendance is still being recorded">so far</span>}{a.feedback && <span className="badge badge-info" style={{ marginLeft: 6 }}>feedback</span>}</td>
                   <td>{titleCase(a.component)}</td>
                   <td className="small nowrap">{dateStr(a.due_date)}</td>
                   <td className="r num">{a.absent ? "Absent" : a.component === "attendance" ? `${a.attended ?? "—"} / ${a.sessions_held}` : a.marks === null ? "—" : `${a.marks} / ${a.max_marks}`}</td>

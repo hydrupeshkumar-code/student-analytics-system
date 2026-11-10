@@ -10,6 +10,7 @@ import random
 import sys
 from datetime import date, timedelta
 
+from .config import get_settings
 from .database import SessionLocal
 from .models import (
     Assessment, CoPoMapping, Course, CourseOutcome, Enrollment, HistoricalRecord, NcpResult, Program,
@@ -88,6 +89,8 @@ def seed_demo():
             return u
 
         admin = user("Exam Cell Administrator", "admin@saap.edu", "admin", "Admin@123")
+        # the demo password is public (README); on a live deployment the admin must replace it at first sign-in
+        admin.must_change_password = get_settings().is_production
         neha = user("T. Neha", "neha@saap.edu", "faculty", "Faculty@123", "Computer Science & Engineering")
         ravi = user("Dr. Ravi Shankar", "ravi@saap.edu", "faculty", "Faculty@123", "Computer Science & Engineering")
         anita = user("Prof. Anita Desai", "anita@saap.edu", "faculty", "Faculty@123", "Computer Science & Engineering")
@@ -250,6 +253,8 @@ def seed_demo():
         db.commit()
         print(f"Demo data loaded: 4 staff, {len(students)} students, 3 courses, {n_hist} synthetic history rows.")
         print("Logins: admin@saap.edu / Admin@123 · neha@saap.edu / Faculty@123 · student@saap.edu / Student@123")
+        if admin.must_change_password:
+            print("Production: admin@saap.edu must choose a new password at first sign-in.")
 
 
 def bootstrap():

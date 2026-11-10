@@ -18,6 +18,8 @@ def compute_rubric_marks(rubric: Rubric, selections: dict[int, int], max_marks: 
     total_weight = sum(c.weight for c in rubric.criteria)
     if total_weight <= 0:
         raise HTTPException(422, "Rubric criteria weights must be positive")
+    if set(selections) - {c.id for c in rubric.criteria}:
+        raise HTTPException(422, "Selections include a criterion that is not part of this rubric")
 
     acc = 0.0
     for criterion in rubric.criteria:

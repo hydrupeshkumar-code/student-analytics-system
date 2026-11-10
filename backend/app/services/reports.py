@@ -151,6 +151,13 @@ def _autosize(ws, max_width=60):
 
 
 def _xlsx_bytes(wb: Workbook) -> bytes:
+    # openpyxl stores any string starting with "=" as a formula; these reports contain none,
+    # so keep user-entered text (names, titles, outcomes) as plain text
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for cell in row:
+                if cell.data_type == "f":
+                    cell.data_type = "s"
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()

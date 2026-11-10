@@ -3,6 +3,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from .config import get_settings
 from .database import get_db
 from .models import Assessment, AuditLog, Course, Enrollment, Role, User
 from .security import decode_token
@@ -76,9 +77,13 @@ def get_assessment_for_edit(assessment_id: int, db: Session, user: User) -> Asse
 
 
 def client_ip(request: Request) -> str:
+    hops = get_settings().trusted_proxy_hops
     fwd = request.headers.get("x-forwarded-for")
-    if fwd:
-        return fwd.split(",")[0].strip()
+    if hops > 0 and fwd:
+        entries = [e.strip() for e in fwd.split(",") if e.strip()]
+        if entries:
+            # each trusted proxy appends the address it saw; anything left of that is client-supplied
+            return entries[-min(hops, len(entries))]
     return request.client.host if request.client else "unknown"
 
 

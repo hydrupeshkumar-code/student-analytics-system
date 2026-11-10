@@ -51,7 +51,7 @@ def csv_response(rows: list[list], filename: str) -> Response:
 def _safe(v):
     # neutralise spreadsheet formula injection
     s = str(v)
-    return "'" + s if s[:1] in ("=", "+", "-", "@") and not _is_number(s) else s
+    return "'" + s if s[:1] in ("=", "+", "-", "@", "\t", "\r") and not _is_number(s) else s
 
 
 def _is_number(s: str) -> bool:

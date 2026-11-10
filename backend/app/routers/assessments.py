@@ -98,6 +98,11 @@ def update_assessment(assessment_id: int, body: AssessmentUpdate, request: Reque
     for locked in ("max_marks", "rubric_id", "sessions_held"):
         if locked in data and data[locked] != getattr(a, locked) and scored:
             raise HTTPException(409, f"Cannot change {locked.replace('_', ' ')} after marks have been entered")
+    if a.component == "attendance":
+        if "sessions_held" in data and not data["sessions_held"]:
+            raise HTTPException(422, "Attendance components need the number of sessions held")
+        if data.get("rubric_id"):
+            raise HTTPException(422, "Attendance cannot be rubric-scored")
     if "weightage" in data:
         _check_weightage(db, a.course_id, data["weightage"], exclude_id=a.id)
     if data.get("rubric_id") and not db.get(Rubric, data["rubric_id"]):
