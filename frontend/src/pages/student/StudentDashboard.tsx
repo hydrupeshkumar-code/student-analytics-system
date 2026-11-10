@@ -11,6 +11,8 @@ interface MyCourse {
   id: number; code: string; name: string; semester: number; academic_year: string; credits: number; faculty: string | null;
   cp_pct: number | null; ncp_pct: number | null; final_pct: number | null; grade: string | null; passed: boolean | null;
   components: Record<string, number | null>; assessments_released: number; flags: string[]; risk_level: RiskLevel | null;
+  attendance_risk: { risk_level: RiskLevel | null; value_pct: number | null; risk_index: number | null };
+  internal_risk: { risk_level: RiskLevel | null; value_pct: number | null; risk_index: number | null };
 }
 
 export default function StudentDashboard() {
@@ -29,7 +31,10 @@ export default function StudentDashboard() {
     <>
       <Hero title={`Hi ${user?.name.split(" ")[0]}! 👋`}
         subtitle={flags.length ? `You have ${flags.length} thing${flags.length > 1 ? "s" : ""} to act on this semester — see below. Keep going, you've got this!` : "You're on track this semester. Check your marks, rubric feedback and course outcome progress any time."}
-        actions={<button className="btn" onClick={() => download("/me/report.pdf").catch((e) => toast(e.message, "error"))}>↓ Download my report</button>}
+        actions={<>
+          <Link className="btn" to="/my/report">View academic report</Link>
+          <button className="btn btn-primary" onClick={() => download("/me/report.pdf").catch((e) => toast(e.message, "error"))}>↓ Download PDF</button>
+        </>}
         art={<StudyIllustration />} />
       <div className="grid grid-4" style={{ marginBottom: 16 }}>
         <Stat label="Current courses" value={current.length} icon={<IconBook />} tone="violet" />
@@ -55,6 +60,14 @@ export default function StudentDashboard() {
                   <span className="pct">{fmt(c.cp_pct)}<span className="muted" style={{ fontSize: 13 }}>%</span></span>
                 </div>
                 <Meter value={c.cp_pct} />
+                <div className="small spread" style={{ marginTop: 8, gap: 8 }}>
+                  <span>Attendance {c.attendance_risk.value_pct === null ? "—" : `${fmt(c.attendance_risk.value_pct, 0)}%`}</span>
+                  <RiskBadge level={c.attendance_risk.risk_level} />
+                </div>
+                <div className="small spread" style={{ marginTop: 4, gap: 8 }}>
+                  <span>Internals {c.internal_risk.value_pct === null ? "—" : `${fmt(c.internal_risk.value_pct, 0)}%`}</span>
+                  <RiskBadge level={c.internal_risk.risk_level} />
+                </div>
                 <dl className="kv" style={{ gridTemplateColumns: "repeat(4, auto)", justifyContent: "space-between", gap: "2px 12px" }}>
                   {(["quiz", "assignment", "practical", "attendance"] as const).map((k) => (
                     <div key={k}><dt>{k.slice(0, 5)}</dt><dd className="mono">{c.components[k] === null ? "—" : `${fmt(c.components[k], 0)}%`}</dd></div>

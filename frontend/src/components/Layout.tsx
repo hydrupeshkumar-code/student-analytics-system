@@ -24,6 +24,7 @@ const NAV: Record<string, { section?: string; items: Item[] }[]> = {
       { to: "/ml", label: "Early-warning model", icon: IconBrain },
       { to: "/settings", label: "Settings", icon: IconGear },
       { to: "/audit", label: "Audit log", icon: IconLog },
+      { to: "/interventions", label: "Interventions", icon: IconTarget },
     ] },
   ],
   faculty: [
@@ -31,19 +32,25 @@ const NAV: Record<string, { section?: string; items: Item[] }[]> = {
     { section: "Teaching", items: [
       { to: "/courses", label: "My courses", icon: IconBook },
       { to: "/rubrics", label: "Rubric library", icon: IconRubric },
+      { to: "/interventions", label: "Interventions", icon: IconTarget },
     ] },
   ],
   student: [
-    { items: [{ to: "/", label: "My performance", icon: IconHome, end: true }] },
+    { items: [
+      { to: "/", label: "My performance", icon: IconHome, end: true },
+      { to: "/my/report", label: "Academic report", icon: IconTarget },
+      { to: "/my/career", label: "Internship readiness", icon: IconBrain },
+      { to: "/my/planner", label: "Study planner", icon: IconBook },
+    ] },
   ],
 };
 
 function useTheme() {
-  const [theme, setTheme] = useState<string | null>(() => { try { return localStorage.getItem("saap.theme"); } catch { return null; } });
+  const [theme, setTheme] = useState<string | null>(() => { try { return localStorage.getItem("student-platform.theme"); } catch { return null; } });
   useEffect(() => {
     if (theme) document.documentElement.dataset.theme = theme;
     else delete document.documentElement.dataset.theme;
-    try { if (theme) localStorage.setItem("saap.theme", theme); } catch { /* ignore */ }
+    try { if (theme) localStorage.setItem("student-platform.theme", theme); } catch { /* ignore */ }
   }, [theme]);
   const isDark = theme ? theme === "dark" : window.matchMedia?.("(prefers-color-scheme: dark)").matches;
   return { isDark, toggle: () => setTheme(isDark ? "light" : "dark") };
@@ -63,7 +70,7 @@ export default function Layout() {
       <aside className={`sidebar ${open ? "open" : ""}`} aria-label="Main navigation">
         <div className="brand">
           <div className="brand-mark">S</div>
-          <div><div className="brand-name">SAAP</div><div className="brand-sub">Assessment & Analytics</div></div>
+          <div><div className="brand-name">Student Platform</div><div className="brand-sub">Analytics & Career Readiness</div></div>
         </div>
         <nav className="nav">
           {NAV[user.role].map((g, i) => (
@@ -101,7 +108,7 @@ export default function Layout() {
       <div className="main">
         <header className="topbar">
           <button className="btn btn-ghost icon-btn" onClick={() => setOpen(true)} aria-label="Open menu"><IconMenu /></button>
-          <strong>SAAP</strong>
+          <strong>Student Platform</strong>
           <button className="btn btn-ghost icon-btn" onClick={toggle} aria-label="Toggle theme">{isDark ? <IconSun /> : <IconMoon />}</button>
         </header>
         <div className="appbar">

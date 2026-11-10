@@ -1,8 +1,8 @@
-# Student Assessment & Analytics Platform (SAAP)
+# Student Platform
 
 **Continuous Evaluation Tracking with Rubric-Based Assessment.** Special Project, Faculty of Science & Technology, IFHE Hyderabad.
 
-SAAP brings the **CP** (Continuous Process: quizzes, assignments, practicals, attendance) and **NCP** (Non-Continuous Process: semester-end exam) evaluations into one rubric-driven system. It includes role-based dashboards, NAAC/NBA-ready CO/PO attainment reports, and an ML early-warning module that flags at-risk students.
+Student Platform brings the **CP** (Continuous Process: quizzes, assignments, practicals, attendance) and **NCP** (Non-Continuous Process: semester-end exam) evaluations into one rubric-driven system. It includes role-based dashboards, NAAC/NBA-ready CO/PO attainment reports, and an ML early-warning module that flags at-risk students.
 
 | Layer | Technology |
 |---|---|
@@ -34,7 +34,10 @@ SAAP brings the **CP** (Continuous Process: quizzes, assignments, practicals, at
 - Early-warning list with probability, CP features and plain-language reasons.
 
 **Student**
-- Per-course component breakdown with class averages, rubric feedback (selected level per criterion), CO progress, risk status with suggested next steps, final grade once results are published, a GPA estimate, and a PDF performance report.
+- Dedicated individual Academic Report page and downloadable personal PDF, with a subject-wise marks table, CP/NCP/final results, and a GPA estimate.
+- Separate attendance-risk and internal-assessment-risk indicators. The transparent 0–100 risk index is calculated independently for attendance and quiz/assignment/practical marks; the overall ML early-warning signal remains separate.
+- Internship-oriented, personalised feedback linked to current subjects and weak areas. Examples include Python mini-projects with GitHub/README/tests and professional-email, self-introduction and presentation practice.
+- Per-course component breakdown with class averages, rubric feedback (selected level per criterion), CO progress, early-warning guidance, and final grade once results are published.
 - Students see only *completed* assessments and *published* NCP results, plus their attendance so far while the attendance register is still open. No final grade is shown while any CP marking is still open.
 
 **Administrator**
@@ -52,7 +55,8 @@ SAAP brings the **CP** (Continuous Process: quizzes, assignments, practicals, at
 - **Attendance marks** = attended ÷ sessions held × max marks.
 - **Final %** = CP % × CP weight + NCP % × NCP weight (per course, default 50/50). **Pass** requires final ≥ 40% *and* NCP ≥ 35% (configurable). Otherwise the grade is F.
 - **CO attainment (NBA direct method):** a student attains a CO at ≥ 60% of marks on the assessments mapped to it. The share of students attaining gives the level (3 ≥ 70%, 2 ≥ 60%, 1 ≥ 50%). CO attainment = CP weight × CP level + NCP weight × NCP level. **PO attainment** = Σ(CO attainment × strength) ÷ Σ(strength). All thresholds are per course.
-- **At-risk model:** features are quiz %, assignment %, practical %, attendance % and overall CP % (CP-only, so predictions exist before the exam). Target is fail/pass. Both algorithms are cross-validated, the better one by F1 is selected, and hold-out metrics are stored at the flagging threshold (medium risk, p ≥ 0.35). With no trained model, a transparent rules-based fallback is used.
+- **Overall at-risk model:** features are quiz %, assignment %, practical %, attendance % and overall CP % (CP-only, so predictions exist before the exam). Target is fail/pass. Both algorithms are cross-validated, the better one by F1 is selected, and hold-out metrics are stored at the flagging threshold (medium risk, p ≥ 0.35). With no trained model, a transparent rules-based fallback is used.
+- **Separate student-facing risk signals:** attendance risk uses the configured minimum-attendance requirement. Internal-assessment risk averages the available quiz, assignment and practical components against a 60% improvement target. The scores are labelled as risk indexes, not probabilities, and are accompanied by practical next steps.
 
 ## Run locally (development)
 
@@ -85,7 +89,7 @@ Alternatively, run `npm run build` in `frontend/` once and FastAPI serves the bu
 | Faculty | neha@saap.edu | Faculty@123 |
 | Student | student@saap.edu | Student@123 |
 
-Other demo students are `stu002@saap.edu` … `stu040@saap.edu` with the student password. The demo includes one completed course (CS204, NCP published), two running courses, rubrics, CO–PO maps and 1,200 **synthetic** training records. Replace the synthetic records with real anonymised history before relying on predictions (Admin → Early-warning model).
+Other demo students are `stu002@saap.edu` … `stu030@saap.edu` with the student password (30 students total). The submission demo contains exactly three subjects: **PC301 Professional Communication**, **CS304 Data Structures**, and **CS305 Computer Networks**. Each subject has the requested assessment breakup: **Mid-Term 30 marks + Internal Assessment 30 marks + Final Examination 40 marks = 100 marks**. The cohort, marks and training history are synthetic demonstration data; replace them with authorised, anonymised institutional records before using predictions for real decisions. Attendance risk and internal-assessment risk are shown separately as explainable guidance indexes, not probabilities. Strong performance receives stretch goals and book recommendations; developing performance receives targeted topic practice; high-support-priority performance receives a fundamentals-first recovery plan. These suggestions support learning and internship preparation but do not guarantee placement.
 
 ## Deploy on Render (one click)
 
@@ -96,7 +100,9 @@ The repo includes a Render Blueprint, [`render.yaml`](render.yaml). It creates:
 To deploy:
 1. In Render, click **New → Blueprint**, connect this GitHub repository, and click **Apply**.
 2. When prompted, enter `INITIAL_ADMIN_EMAIL` and `INITIAL_ADMIN_PASSWORD` (at least 8 characters, letters and numbers). This admin is created on first start.
-3. Optional: set `SEED_DEMO=true` before the first deploy to load the demo institution, which is useful for a project review. Because the demo passwords are public, a deployed `admin@saap.edu` must choose a new password at first sign-in. The demo faculty and student logins keep their passwords.
+3. The Blueprint sets `SEED_DEMO=true` so the demo admin, faculty and student accounts are available for a project review. Demo credentials are listed above. This is only for demonstrations; set `SEED_DEMO=false` before using real student data.
+
+On startup, demo data is added only when the database has no courses, programs or non-admin accounts. This also supports a database where Render created only the initial admin before demo seeding was enabled. In that case, `admin@saap.edu` is set to the demo password `Admin@123`. Do not enable demo seeding on a database containing real student data.
 
 What happens automatically:
 - `JWT_SECRET` is generated by Render.
@@ -154,3 +160,13 @@ legacy-prototype/          earlier Flask prototype (kept for reference)
 - Covers the CP–NCP evaluation and analytics module only. Admissions, fees, timetabling and library are out of scope.
 - Baseline ML models only. Prediction quality depends on the volume and quality of the historical data you import.
 - Login throttling is per process. With several app instances, also rate-limit at the reverse proxy.
+
+
+## Student Platform additions
+
+- **Internship readiness:** role-oriented skill evidence, confidence self-assessment, and prioritized skill-gap advice.
+- **Personal study planner:** student-owned tasks, due dates, completion tracking, and suggestions drawn from academic flags.
+- **Explainable risk and interventions:** course risk rows expose the reasons returned by the prediction service; faculty/admin can log support actions and follow-up status.
+- **Attendance validation:** attendance assessments require a valid sessions-held count; attended sessions must be whole numbers within the valid range and percentage/marks are calculated from sessions held.
+
+The study planner and intervention tracker currently store their records in browser local storage. For multi-device use and institutional deployment, move these records to authenticated server-side tables with audit logging and role-based access before storing sensitive student notes.

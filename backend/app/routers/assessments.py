@@ -206,8 +206,12 @@ def _save_scores(db: Session, a: Assessment, items, user: User):
             s.marks, s.attended = None, None
             s.criteria = []
         elif a.component == "attendance":
-            if it.attended is not None and it.attended > (a.sessions_held or 0):
-                raise HTTPException(422, f"Attended sessions cannot exceed {a.sessions_held}")
+            if not a.sessions_held or a.sessions_held < 1:
+                raise HTTPException(422, "This attendance assessment has no valid sessions-held value. Edit the assessment before entering attendance.")
+            if it.attended is not None and (it.attended < 0 or it.attended > a.sessions_held):
+                raise HTTPException(422, f"Attended sessions must be between 0 and {a.sessions_held}")
+            if it.attended is not None and int(it.attended) != it.attended:
+                raise HTTPException(422, "Attended sessions must be a whole number")
             s.attended = it.attended
             s.marks = None if it.attended is None else round(a.max_marks * it.attended / a.sessions_held, 2)
         elif rubric:

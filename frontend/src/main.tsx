@@ -10,7 +10,7 @@ import "@fontsource/poppins/700.css";
 import "./styles.css";
 
 try {
-  const t = localStorage.getItem("saap.theme");
+  const t = localStorage.getItem("student-platform.theme");
   if (t) document.documentElement.dataset.theme = t;
 } catch { /* storage unavailable */ }
 

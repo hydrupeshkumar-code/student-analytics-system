@@ -15,12 +15,18 @@ interface Item {
   marks: number | null; pct: number | null; absent: boolean; attended: number | null; sessions_held: number | null;
   feedback: string | null; class_average: number | null; rubric: RubricView | null;
 }
+interface RiskSignal {
+  risk_level: RiskLevel | null; risk_index: number | null; value_pct: number | null; target_pct: number;
+  summary: string; actions: string[]; based_on?: string[]; components?: Record<string, number | null>;
+}
+interface InternshipFeedback { skill: string; priority: "high" | "medium" | "low"; why: string; action: string; internship_link: string; recommended_books?: string[] }
 interface Detail {
   course: { id: number; code: string; name: string; semester: number; academic_year: string; credits: number; faculty: string | null; cp_weight: number; ncp_weight: number; ncp_max_marks: number; ncp_published: boolean };
   assessments: Item[]; components: Record<string, number | null>; cp_pct: number | null; cp_weight_covered: number; class_cp_average: number | null;
   ncp_marks: number | null; ncp_pct: number | null; ncp_absent: boolean; final_pct: number | null; grade: string | null; passed: boolean | null;
   flags: string[]; result_pending: boolean; cos: { code: string; description: string; pct: number | null; target: number; attained: boolean | null }[];
   risk: { risk_level: RiskLevel; reasons: string[]; suggestions: string[] } | null;
+  attendance_risk: RiskSignal; internal_risk: RiskSignal; internals_pct: number | null; internship_feedback: InternshipFeedback[];
   requirements: { pass_mark_pct: number; ncp_min_pct: number; attendance_min_pct: number };
 }
 
@@ -48,6 +54,7 @@ export default function StudentCourse() {
   const { courseId } = useParams();
   const { data, error, loading, reload } = useFetch<Detail>(`/me/courses/${courseId}`);
   const [open, setOpen] = useState<number | null>(null);
+  const [tab, setTab] = useState<"course" | "internship">("course");
   if (loading && !data) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
   if (!data) return null;
@@ -84,6 +91,12 @@ export default function StudentCourse() {
         </div>
       </section>
 
+      <div className="tabs" role="tablist" aria-label="Course information">
+        <button type="button" role="tab" aria-selected={tab === "course"} aria-controls="course-panel" onClick={() => setTab("course")}>Course performance</button>
+        <button type="button" role="tab" aria-selected={tab === "internship"} aria-controls="internship-panel" onClick={() => setTab("internship")}>Internship feedback</button>
+      </div>
+
+      {tab === "course" ? <section role="tabpanel" id="course-panel">
       {(data.flags.length > 0 || (data.risk && data.risk.risk_level !== "low")) && (
         <div className="card card-pad guidance" style={{ marginBottom: 16 }}>
           <h3 style={{ marginBottom: 8 }}>Guidance</h3>
@@ -96,10 +109,27 @@ export default function StudentCourse() {
         </div>
       )}
 
+      <div className="section-title"><h2>Separate risk predictions</h2></div>
+      <p className="text-2" style={{ marginTop: -8, marginBottom: 14 }}>Attendance and internals are assessed separately. The risk index is a transparent 0–100 guidance score, not a statistical probability.</p>
       <div className="grid grid-2" style={{ alignItems: "start", marginBottom: 16 }}>
-        <Card title="You vs class average" subtitle="Percentage per released assessment">
-          {chart.length ? <PairedColumns data={chart} x="name" a={{ key: "you", name: "You" }} b={{ key: "cls", name: "Class average" }} /> : <Empty title="No marks released yet" />}
+        <Card title="Attendance risk" subtitle={`Minimum requirement: ${fmt(data.attendance_risk.target_pct, 0)}%`}>
+          <div className="spread" style={{ marginBottom: 8 }}><RiskBadge level={data.attendance_risk.risk_level} /><strong>{data.attendance_risk.value_pct === null ? "—" : `${fmt(data.attendance_risk.value_pct, 1)}%`}</strong></div>
+          <Meter value={data.attendance_risk.risk_index} color={data.attendance_risk.risk_level === "high" ? "var(--serious)" : undefined} />
+          <p className="small text-2">Risk index: {data.attendance_risk.risk_index === null ? "—" : `${fmt(data.attendance_risk.risk_index, 0)}/100`}. {data.attendance_risk.summary}</p>
+          <ul className="small" style={{ marginBottom: 0, paddingLeft: 18 }}>{data.attendance_risk.actions.map((a) => <li key={a}>{a}</li>)}</ul>
         </Card>
+        <Card title="Internal-assessment risk" subtitle="Quiz, assignment and practical marks; target 60%">
+          <div className="spread" style={{ marginBottom: 8 }}><RiskBadge level={data.internal_risk.risk_level} /><strong>{data.internals_pct === null ? "—" : `${fmt(data.internals_pct, 1)}%`}</strong></div>
+          <Meter value={data.internal_risk.risk_index} color={data.internal_risk.risk_level === "high" ? "var(--serious)" : undefined} />
+          <p className="small text-2">Risk index: {data.internal_risk.risk_index === null ? "—" : `${fmt(data.internal_risk.risk_index, 0)}/100`}. {data.internal_risk.summary}</p>
+          <ul className="small" style={{ marginBottom: 0, paddingLeft: 18 }}>{data.internal_risk.actions.map((a) => <li key={a}>{a}</li>)}</ul>
+        </Card>
+      </div>
+
+      <Card title="You vs class average" subtitle="Percentage per released assessment">
+        {chart.length ? <PairedColumns data={chart} x="name" a={{ key: "you", name: "You" }} b={{ key: "cls", name: "Class average" }} /> : <Empty title="No marks released yet" />}
+      </Card>
+      <div className="grid grid-2" style={{ alignItems: "start", marginBottom: 16, marginTop: 16 }}>
         <Card title="Course outcome progress" subtitle="Your score on assessments mapped to each CO">
           {!data.cos.length ? <Empty title="Course outcomes not defined" /> : (
             <div className="stack" style={{ gap: 12 }}>{data.cos.map((co) => (
@@ -140,6 +170,19 @@ export default function StudentCourse() {
           </table></div>
         )}
       </Card>
+      </section> : <section role="tabpanel" id="internship-panel">
+      <Card title="Internship-focused feedback" subtitle="Simple, course-based steps to help you prepare for internships.">
+        <div className="grid grid-2">
+          {data.internship_feedback.map((f) => <div key={f.skill}>
+            <div className="spread"><strong>{f.skill}</strong><span className={`badge ${f.priority === "high" ? "badge-warn" : "badge-info"}`}>{f.priority === "high" ? "Priority" : f.priority === "low" ? "Strong performance" : "Build next"}</span></div>
+            <p className="small text-2">{f.why}</p>
+            <p className="small"><strong>Action:</strong> {f.action}</p>
+            {f.recommended_books?.length ? <p className="small"><strong>Recommended books:</strong> {f.recommended_books.join(" · ")}</p> : null}
+            <p className="small muted"><strong>Internship relevance:</strong> {f.internship_link}</p>
+          </div>)}
+        </div>
+      </Card>
+      </section>}
     </>
   );
 }

@@ -107,30 +107,113 @@ def attainment_pdf(att: dict) -> bytes:
     return buf.getvalue()
 
 
-def student_report_pdf(student: dict, courses: list[dict]) -> bytes:
+def _risk_label(signal: dict | None) -> str:
+    if not signal or not signal.get("risk_level"):
+        return "Not enough data"
+    label = str(signal["risk_level"]).upper()
+    index = signal.get("risk_index")
+    return f"{label} risk (index {index:.0f}/100)" if isinstance(index, (int, float)) else f"{label} risk"
+
+
+def student_report_pdf(student: dict, courses: list[dict], summary: dict | None = None,
+                       internship_feedback: list[dict] | None = None) -> bytes:
+    """Generate an individual student's academic, risk and internship-readiness report."""
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=15 * mm, rightMargin=15 * mm,
-                            topMargin=14 * mm, bottomMargin=16 * mm, title=f"Performance report {student['name']}")
+                            topMargin=14 * mm, bottomMargin=16 * mm, title=f"Academic report {student['name']}")
     ss = _styles()
-    el = [Paragraph("Student Performance Report", ss["Title"]),
-          Paragraph(f"<b>{student['name']}</b> · Roll no. {student.get('roll_no') or '—'} · "
-                    f"{student.get('program') or ''}", ss["BodyText"]), Spacer(1, 8)]
-    for i, c in enumerate(courses):
-        el.append(Paragraph(f"{c['code']} — {c['name']} ({c['academic_year']})", ss["Heading3"]))
-        rows = [["Assessment", "Component", "Marks", "Max", "%", "Weight"]]
-        for a in c["assessments"]:
-            rows.append([Paragraph(a["title"], ss["Cell"]), a["component"], _fmt(a["marks"]),
-                         _fmt(a["max_marks"], 0), _fmt(a["pct"], 1), _fmt(a["weightage"], 0)])
-        el.append(_table(rows, [60 * mm, 28 * mm, 22 * mm, 18 * mm, 18 * mm, 20 * mm]))
-        el.append(Spacer(1, 4))
+    el = [
+        Paragraph("Individual Academic & Internship Readiness Report", ss["Title"]),
+        Paragraph(f"<b>{student['name']}</b> · Roll no. {student.get('roll_no') or '—'} · "
+                  f"{student.get('program') or ''}", ss["BodyText"]),
+        Paragraph(f"Batch: {student.get('batch') or '—'} · Semester: {student.get('semester') or '—'} · "
+                  f"Section: {student.get('section') or '—'}", ss["Small"]),
+        Spacer(1, 8),
+    ]
+    if summary:
+        el.append(Paragraph("Academic snapshot", ss["Heading2"]))
+        snapshot = [
+            ["Enrolled subjects", "Completed subjects", "Avg. attendance", "Avg. internals", "Avg. final"],
+            [_fmt(summary.get("courses_enrolled"), 0), _fmt(summary.get("courses_completed"), 0),
+             f"{_fmt(summary.get('average_attendance_pct'), 1)}%" if summary.get("average_attendance_pct") is not None else "—",
+             f"{_fmt(summary.get('average_internal_pct'), 1)}%" if summary.get("average_internal_pct") is not None else "—",
+             f"{_fmt(summary.get('average_final_pct'), 1)}%" if summary.get("average_final_pct") is not None else "—"],
+        ]
+        el.append(_table(snapshot, [32 * mm, 34 * mm, 34 * mm, 30 * mm, 25 * mm]))
         el.append(Paragraph(
-            f"CP score: <b>{_fmt(c['cp_pct'])}%</b> · NCP: <b>{_fmt(c['ncp_pct'])}%</b> · "
-            f"Final: <b>{_fmt(c['final_pct'])}%</b> · Grade: <b>{c['grade'] or '—'}</b>", ss["BodyText"]))
-        if c.get("risk"):
-            el.append(Paragraph(f"Early-warning status: {c['risk']['risk_level'].upper()}", ss["Small"]))
+            f"Subjects with attendance risk: <b>{summary.get('attendance_at_risk', 0)}</b> · "
+            f"Subjects with internal-assessment risk: <b>{summary.get('internals_at_risk', 0)}</b> · "
+            f"Subjects flagged by overall early-warning model: <b>{summary.get('overall_ml_at_risk', 0)}</b>", ss["Small"]))
         el.append(Spacer(1, 8))
-        if i and i % 3 == 0:
+
+    if not courses:
+        el.append(Paragraph("No enrolled subjects were found for this account.", ss["BodyText"]))
+
+    for i, c in enumerate(courses):
+        el.append(Paragraph(f"{c['code']} — {c['name']} ({c['academic_year']}, Semester {c['semester']})", ss["Heading2"]))
+        el.append(Paragraph(
+            f"Credits: {_fmt(c.get('credits'), 1)} · Faculty: {c.get('faculty') or '—'} · "
+            f"CP: <b>{_fmt(c.get('cp_pct'), 1)}%</b> · NCP: <b>{_fmt(c.get('ncp_pct'), 1)}%</b> · "
+            f"Final: <b>{_fmt(c.get('final_pct'), 1)}%</b> · Grade: <b>{c.get('grade') or '—'}</b>", ss["BodyText"]))
+
+        components = c.get("components") or {}
+        comp_rows = [["Internal / attendance split", "Score", "Interpretation"]]
+        for key, label in (("quiz", "Quiz average"), ("assignment", "Assignment average"),
+                           ("practical", "Practical average"), ("attendance", "Attendance")):
+            value = c.get("attendance_pct") if key == "attendance" else components.get(key)
+            comp_rows.append([label, f"{_fmt(value, 1)}%" if value is not None else "—",
+                              "Internal assessment" if key != "attendance" else "Tracked separately"])
+        comp_rows.append(["Internal average (quiz + assignment + practical)",
+                          f"{_fmt(c.get('internals_pct'), 1)}%" if c.get("internals_pct") is not None else "—",
+                          "60% improvement target"])
+        el.append(_table(comp_rows, [68 * mm, 30 * mm, 55 * mm]))
+
+        ar = c.get("attendance_risk") or {}
+        ir = c.get("internal_risk") or {}
+        el.append(Paragraph(
+            f"Separate risk indicators — Attendance: <b>{_risk_label(ar)}</b>; "
+            f"Internal assessments: <b>{_risk_label(ir)}</b>.", ss["BodyText"]))
+        for label, signal in (("Attendance", ar), ("Internal assessments", ir)):
+            if signal.get("summary"):
+                el.append(Paragraph(f"<b>{label}:</b> {signal['summary']}", ss["Small"]))
+        if c.get("risk"):
+            el.append(Paragraph(f"Overall ML early-warning status: <b>{c['risk']['risk_level'].upper()}</b> "
+                                "(separate from the two threshold-based indicators).", ss["Small"]))
+
+        rows = [["Assessment", "Component", "Marks", "Max", "%", "Weight"]]
+        for a in c.get("assessments", []):
+            rows.append([Paragraph(a["title"], ss["Cell"]), a["component"], _fmt(a.get("marks")),
+                         _fmt(a.get("max_marks"), 0), _fmt(a.get("pct"), 1), _fmt(a.get("weightage"), 0)])
+        if len(rows) > 1:
+            el.append(Spacer(1, 4))
+            el.append(Paragraph("Released assessment details", ss["Heading3"]))
+            el.append(_table(rows, [60 * mm, 28 * mm, 22 * mm, 18 * mm, 18 * mm, 20 * mm]))
+
+        feedback = c.get("internship_feedback") or []
+        if feedback:
+            el.append(Spacer(1, 4))
+            el.append(Paragraph("Internship-focused next step", ss["Heading3"]))
+            for item in feedback:
+                el.append(Paragraph(f"<b>{item.get('skill', 'Skill')}</b> — {item.get('action', '')}", ss["Small"]))
+                el.append(Paragraph(f"Relevant to: {item.get('internship_link', '')}", ss["Small"]))
+        el.append(Spacer(1, 10))
+        if i and i % 2 == 1:
             el.append(PageBreak())
+
+    if internship_feedback:
+        el += [Spacer(1, 4), Paragraph("Personal internship preparation plan", ss["Heading2"])]
+        for item in internship_feedback:
+            source = f" · {item.get('course_code')}" if item.get("course_code") else ""
+            el.append(Paragraph(f"<b>{item.get('skill', 'Skill')}{source}</b>", ss["BodyText"]))
+            el.append(Paragraph(item.get("action", ""), ss["Small"]))
+            el.append(Paragraph(f"Internship relevance: {item.get('internship_link', '')}", ss["Small"]))
+            el.append(Spacer(1, 4))
+
+    el.append(Spacer(1, 5))
+    el.append(Paragraph(
+        "Note: Attendance and internal-assessment risk indexes are transparent, threshold-based guidance scores, "
+        "not statistical probabilities. The overall ML early-warning status is shown separately. Internship guidance "
+        "is intended to help plan practice and does not guarantee placement or internship eligibility.", ss["Small"]))
     doc.build(el, onFirstPage=_footer, onLaterPages=_footer)
     return buf.getvalue()
 

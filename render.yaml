@@ -1,4 +1,4 @@
-# Render Blueprint — Student Assessment & Analytics Platform (SAAP)
+# Render Blueprint — Student Platform
 #
 # Deploy: Render dashboard → New → Blueprint → pick this repository → Apply.
 # Render asks for the values marked `sync: false` (first admin email/password) during setup.
@@ -38,9 +38,9 @@ services:
         sync: false                 # at least 8 characters with letters and numbers
       - key: INITIAL_ADMIN_NAME
         value: Exam Cell Administrator
-      # "true" loads the demo institution (3 courses, 40 students) into an EMPTY database — for demos only.
+      # Demo accounts are enabled for this deployment. Set false before using real student data.
       - key: SEED_DEMO
-        value: "false"
+        value: "true"
 
 databases:
   - name: saap-db

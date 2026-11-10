@@ -26,6 +26,10 @@ function AssessmentForm({ courseId, a, remaining, onClose, onSaved }: {
   const isAtt = f.component === "attendance";
 
   async function save() {
+    if (!f.title.trim()) { setError("Enter an assessment title."); return; }
+    if (!(Number(f.max_marks) > 0)) { setError("Maximum marks must be greater than zero."); return; }
+    if (Number(f.weightage) < 0 || Number(f.weightage) > remaining + (a?.weightage ?? 0) + 0.001) { setError("Weightage is outside the available CP allocation."); return; }
+    if (isAtt && (!Number.isInteger(Number(f.sessions_held)) || Number(f.sessions_held) < 1 || Number(f.sessions_held) > 1000)) { setError("For attendance, enter a whole number of sessions held (1–1000)."); return; }
     setBusy(true); setError(null);
     const body: Record<string, unknown> = {
       title: f.title.trim(), max_marks: Number(f.max_marks), weightage: Number(f.weightage),
@@ -52,10 +56,10 @@ function AssessmentForm({ courseId, a, remaining, onClose, onSaved }: {
         <Field label="CP component"><select className="input" value={f.component} disabled={!!a} onChange={(e) => setF({ ...f, component: e.target.value as Component })}>
           {COMPONENTS.map((c) => <option key={c} value={c}>{titleCase(c)}</option>)}
         </select></Field>
-        <Field label="Maximum marks"><input className="input" type="number" min={1} disabled={locked} value={f.max_marks} onChange={(e) => setF({ ...f, max_marks: e.target.value })} /></Field>
+        <Field label="Maximum marks"><input className="input" type="number" min={1} max={1000} step="any" required disabled={locked} value={f.max_marks} onChange={(e) => setF({ ...f, max_marks: e.target.value })} /></Field>
         <Field label="Weightage in CP (%)" hint={`${remaining.toFixed(0)}% of CP still unallocated`}><input className="input" type="number" min={0} max={100} value={f.weightage} onChange={(e) => setF({ ...f, weightage: e.target.value })} /></Field>
         {isAtt ? (
-          <Field label="Sessions held" hint="Marks = attended ÷ held × max marks"><input className="input" type="number" min={1} disabled={locked} value={f.sessions_held} onChange={(e) => setF({ ...f, sessions_held: e.target.value })} /></Field>
+          <Field label="Sessions held" hint="Use a whole number. Attendance % = attended ÷ held × 100"><input className="input" type="number" min={1} max={1000} step={1} required disabled={locked} value={f.sessions_held} onChange={(e) => setF({ ...f, sessions_held: e.target.value })} /></Field>
         ) : (
           <Field label="Scoring" hint="Rubric-scored assessments compute marks automatically"><select className="input" value={f.rubric_id} disabled={locked} onChange={(e) => setF({ ...f, rubric_id: e.target.value })}>
             <option value="">Direct marks entry</option>
@@ -120,7 +124,7 @@ export default function Assessments() {
         </div>
       </Card>
       <Card pad={false}>
-        {!list.length ? <Empty title="No assessments yet">Create quizzes, assignments, practicals and attendance as CP components.</Empty> : (
+        {!list.length ? <Empty title="No assessments yet">Create quizzes, assignments, practicals and attendance as CP components. For attendance, enter sessions held once, then record each student’s attended sessions. The system calculates attendance percentage and CP marks automatically.</Empty> : (
           <div className="table-wrap"><table className="table">
             <thead><tr><th>Assessment</th><th>Component</th><th className="r">Max</th><th className="r">Weight</th><th>Scoring</th><th>Due</th><th>Status</th><th className="r">Scored</th><th /></tr></thead>
             <tbody>{list.map((a) => (

@@ -27,11 +27,10 @@ export default function Login() {
       <div className="login-hero">
         <div className="row" style={{ gap: 12 }}>
           <div className="brand-mark">S</div>
-          <div><div className="brand-name">SAAP</div><div className="brand-sub">Student Assessment &amp; Analytics</div></div>
+          <div><div className="brand-name">Student Platform</div><div className="brand-sub">Academic Analytics &amp; Career Readiness</div></div>
         </div>
 
         <div>
-          <span className="badge" style={{ background: "rgba(255,255,255,.18)", color: "#fff", marginBottom: 16 }}>Continuous evaluation, unified</span>
           <h1>Every quiz, rubric and exam in <em>one clear record</em> for each student.</h1>
           <p className="lede">CP and NCP marks in one ledger, rubric-scored automatically, with CO/PO attainment ready for NAAC/NBA and early warnings before results are declared.</p>
         </div>

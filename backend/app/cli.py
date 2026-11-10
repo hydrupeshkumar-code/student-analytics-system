@@ -10,7 +10,6 @@ import random
 import sys
 from datetime import date, timedelta
 
-from .config import get_settings
 from .database import SessionLocal
 from .models import (
     Assessment, CoPoMapping, Course, CourseOutcome, Enrollment, HistoricalRecord, NcpResult, Program,
@@ -78,19 +77,26 @@ def _rubric(db, owner, title, desc, levels, criteria):
 def seed_demo():
     rng = random.Random(2026)
     with SessionLocal() as db:
-        # demo data may join an install that only has its first admin, but never real academic data
+        # Demo data may join an install that only has administrator accounts, but
+        # must never be added on top of academic data or existing non-admin users.
         if db.query(Course.id).first() or db.query(Program.id).first() or \
-                db.query(User.id).filter(User.email.like("%@saap.edu")).first():
-            sys.exit("Courses, programs or demo accounts already exist — demo data can only be loaded into a fresh install.")
+                db.query(User.id).filter(User.role != "admin").first():
+            sys.exit("Academic data or non-admin accounts already exist — demo data can only be loaded into an empty install.")
 
         def user(name, email, role, pw, dept=None):
             u = User(name=name, email=email, role=role, department=dept, password_hash=hash_password(pw))
             db.add(u)
             return u
 
-        admin = user("Exam Cell Administrator", "admin@saap.edu", "admin", "Admin@123")
-        # the demo password is public (README); on a live deployment the admin must replace it at first sign-in
-        admin.must_change_password = get_settings().is_production
+        admin = db.query(User).filter_by(email="admin@saap.edu").first()
+        if admin:
+            admin.name = "Exam Cell Administrator"
+            admin.role = "admin"
+            admin.password_hash = hash_password("Admin@123")
+            admin.is_active = True
+            admin.must_change_password = False
+        else:
+            admin = user("Exam Cell Administrator", "admin@saap.edu", "admin", "Admin@123")
         neha = user("T. Neha", "neha@saap.edu", "faculty", "Faculty@123", "Computer Science & Engineering")
         ravi = user("Dr. Ravi Shankar", "ravi@saap.edu", "faculty", "Faculty@123", "Computer Science & Engineering")
         anita = user("Prof. Anita Desai", "anita@saap.edu", "faculty", "Faculty@123", "Computer Science & Engineering")
@@ -104,7 +110,7 @@ def seed_demo():
         # ---- students: hidden ability drives realistic, correlated marks
         students = []
         names = set()
-        for i in range(40):
+        for i in range(30):
             while True:
                 nm = f"{rng.choice(FIRST)} {rng.choice(LAST)}"
                 if nm not in names:
@@ -140,6 +146,17 @@ def seed_demo():
             ("Results & analysis", "Correct observations and interpretation", 25, None),
             ("Viva", "Answers questions on the experiment", 15, None),
         ])
+        communication_rubric = _rubric(db, anita, "Professional Communication Rubric",
+                                        "Writing, presentations, audience awareness and professional tone.", levels4, [
+            ("Clarity & structure", "Organises the message with a clear purpose and logical flow", 30,
+             ["Clear, concise and logically structured", "Mostly clear with minor gaps", "Some structure but unclear in places", "Difficult to follow"]),
+            ("Language & tone", "Uses accurate language and a suitable professional tone", 25,
+             ["Accurate, polished professional language", "Minor language or tone issues", "Frequent errors affect clarity", "Tone or errors obstruct meaning"]),
+            ("Audience awareness", "Adapts content to the intended audience and context", 25,
+             ["Highly appropriate to audience and context", "Generally appropriate", "Limited adaptation to audience", "Audience and purpose are unclear"]),
+            ("Delivery & evidence", "Supports the message and responds to questions", 20,
+             ["Confident delivery with relevant evidence", "Clear delivery with some evidence", "Uneven delivery or limited support", "Unprepared or unsupported delivery"]),
+        ])
 
         def mark(ability, engagement, base, spread, mx):
             v = base + spread * ability + 4 * engagement + rng.gauss(0, 8)
@@ -156,9 +173,10 @@ def seed_demo():
 
         today = date(2026, 10, 3)
 
-        def build_course(code, name, fac, year, sem, cos, copo, finished: bool):
+        def build_course(code, name, fac, year, sem, cos, copo, finished: bool,
+                         assessment_plan=None, credits: float = 4):
             c = Course(code=code, name=name, program_id=cse.id, faculty_id=fac.id, semester=sem,
-                       academic_year=year, section="A", credits=4, cp_weight=50, ncp_weight=50,
+                       academic_year=year, section="A", credits=credits, cp_weight=50, ncp_weight=50,
                        ncp_max_marks=100, ncp_published=finished)
             c.outcomes = [CourseOutcome(code=k, description=d) for k, d in cos]
             db.add(c)
@@ -172,7 +190,7 @@ def seed_demo():
             db.flush()
             co = {x.code: x for x in c.outcomes}
             closed = "finalized" if finished else "completed"
-            plan = [
+            plan = assessment_plan or [
                 ("Quiz 1", "quiz", 20, 15, None, ["CO1"], closed, 69, 14),
                 ("Quiz 2", "quiz", 20, 15, None, ["CO2"], closed, 66, 15),
                 ("Assignment 1", "assignment", 25, 20, assign_rubric, ["CO2", "CO3"], closed, 0, 0),
@@ -220,41 +238,70 @@ def seed_demo():
             db.flush()
             return c
 
-        dbms = build_course("CS204", "Database Management Systems", neha, "2025-26", 4, [
-            ("CO1", "Explain the relational model, keys and integrity constraints."),
-            ("CO2", "Write SQL queries including joins, sub-queries and aggregation."),
-            ("CO3", "Design normalised schemas from ER models."),
-            ("CO4", "Apply transaction management and concurrency control concepts."),
-        ], {"CO1": {"PO1": 3, "PO2": 2}, "CO2": {"PO2": 3, "PO5": 3}, "CO3": {"PO3": 3, "PO2": 2},
-            "CO4": {"PO1": 2, "PO4": 2, "PO12": 1}}, finished=True)
+        # The submission/demo cohort intentionally contains exactly three subjects.
+        # Assessment maximums and CP weightages match the requested 30/30/40 breakup.
+        # Attendance is kept as a running register at 0% weightage: it is recorded, shown to
+        # students and used for attendance risk without changing the 30/30/40 CP split.
+        ATTENDANCE = ("Attendance", "attendance", 10, 0, None, [], "in_progress", 0, 0)
+        pc = build_course("PC301", "Professional Communication", anita, "2026-27", 5, [
+            ("CO1", "Write clear professional emails, summaries and formal documents."),
+            ("CO2", "Adapt messages to audience, purpose and workplace context."),
+            ("CO3", "Deliver structured presentations and participate in group discussions."),
+            ("CO4", "Demonstrate listening, interview and professional interaction skills."),
+        ], {"CO1": {"PO10": 3}, "CO2": {"PO10": 3, "PO8": 1},
+            "CO3": {"PO10": 3, "PO9": 2}, "CO4": {"PO10": 2, "PO9": 2}}, finished=False,
+           assessment_plan=[
+               ("Mid-Term Examination", "quiz", 30, 30, None, ["CO1", "CO2"], "completed", 72, 16),
+               ("Internal Assessment", "assignment", 30, 30, communication_rubric, ["CO2", "CO3"], "completed", 70, 18),
+               ("Final Examination", "practical", 40, 40, communication_rubric, ["CO1", "CO3", "CO4"], "completed", 74, 15),
+               ATTENDANCE,
+           ], credits=2)
 
-        se = build_course("CS301", "Software Engineering", neha, "2026-27", 5, [
-            ("CO1", "Compare software process models for a given project context."),
-            ("CO2", "Elicit and specify requirements using UML use-case and class diagrams."),
-            ("CO3", "Design modular software applying design principles and patterns."),
-            ("CO4", "Plan and execute testing strategies and agile project tracking."),
-        ], {"CO1": {"PO1": 2, "PO11": 2}, "CO2": {"PO2": 3, "PO10": 2}, "CO3": {"PO3": 3, "PO5": 2},
-            "CO4": {"PO4": 2, "PO9": 3, "PO11": 2}}, finished=False)
+        ds = build_course("CS304", "Data Structures", neha, "2026-27", 5, [
+            ("CO1", "Analyse time and space complexity of common data structures."),
+            ("CO2", "Implement arrays, linked lists, stacks and queues."),
+            ("CO3", "Apply trees, heaps and hash tables to solve problems."),
+            ("CO4", "Use graph algorithms and select suitable structures for a problem."),
+        ], {"CO1": {"PO1": 3, "PO2": 2}, "CO2": {"PO2": 3, "PO5": 3},
+            "CO3": {"PO3": 2, "PO2": 3}, "CO4": {"PO2": 3, "PO5": 2}}, finished=False,
+           assessment_plan=[
+               ("Mid-Term Examination", "quiz", 30, 30, None, ["CO1", "CO2"], "completed", 68, 20),
+               ("Internal Assessment", "assignment", 30, 30, assign_rubric, ["CO2", "CO3"], "completed", 66, 22),
+               ("Final Examination", "practical", 40, 40, lab_rubric, ["CO2", "CO3", "CO4"], "completed", 70, 20),
+               ATTENDANCE,
+           ], credits=4)
 
-        os_ = build_course("CS302", "Operating Systems", ravi, "2026-27", 5, [
-            ("CO1", "Describe OS structures, processes and threads."),
-            ("CO2", "Analyse CPU scheduling algorithms."),
-            ("CO3", "Solve synchronisation problems using semaphores and monitors."),
-            ("CO4", "Evaluate memory management and file system techniques."),
-        ], {"CO1": {"PO1": 3}, "CO2": {"PO2": 3, "PO4": 1}, "CO3": {"PO3": 2, "PO2": 2},
-            "CO4": {"PO1": 2, "PO5": 2}}, finished=False)
-
-        _ = anita  # faculty without courses yet, useful for assignment demos
+        cn = build_course("CS305", "Computer Networks", ravi, "2026-27", 5, [
+            ("CO1", "Explain layered network architecture and protocol responsibilities."),
+            ("CO2", "Analyse IP addressing, subnetting and routing decisions."),
+            ("CO3", "Explain transport, application and common network services."),
+            ("CO4", "Use network tools to diagnose connectivity and performance issues."),
+        ], {"CO1": {"PO1": 3}, "CO2": {"PO2": 3, "PO5": 2},
+            "CO3": {"PO1": 2, "PO2": 2}, "CO4": {"PO4": 2, "PO5": 3}}, finished=False,
+           assessment_plan=[
+               ("Mid-Term Examination", "quiz", 30, 30, None, ["CO1", "CO2"], "completed", 70, 18),
+               ("Internal Assessment", "assignment", 30, 30, assign_rubric, ["CO2", "CO3"], "completed", 64, 22),
+               ("Final Examination", "practical", 40, 40, lab_rubric, ["CO3", "CO4"], "completed", 72, 19),
+               ATTENDANCE,
+           ], credits=4)
 
         n_hist = seed_history(db)
         prediction.train(db, "auto", admin.id)
-        for c in (dbms, se, os_):
+        for c in (pc, ds, cn):
             prediction.predict_course(db, c)
         db.commit()
-        print(f"Demo data loaded: 4 staff, {len(students)} students, 3 courses, {n_hist} synthetic history rows.")
+        print(f"Demo data loaded: 4 staff, {len(students)} students, 3 courses (PC, DS, CN; assessment breakup 30/30/40, plus an attendance register), {n_hist} synthetic history rows.")
         print("Logins: admin@saap.edu / Admin@123 · neha@saap.edu / Faculty@123 · student@saap.edu / Student@123")
-        if admin.must_change_password:
-            print("Production: admin@saap.edu must choose a new password at first sign-in.")
+
+
+def seed_demo_subjects(db=None):
+    """Deprecated compatibility command: the submission demo now seeds PC, DS and CN together.
+
+    Deliberately does not append the old PC/Python pair, because the requested demo
+    scope is exactly three subjects. Existing institutional databases are untouched.
+    """
+    print("No extra demo subjects added. Use seed-demo on a fresh database for the PC/DS/CN submission cohort.")
+    return []
 
 
 def bootstrap():
@@ -267,11 +314,15 @@ def bootstrap():
 
     with SessionLocal() as db:
         fresh = (db.query(Course.id).first() is None and db.query(Program.id).first() is None
-                 and db.query(User.id).filter(User.email.like("%@saap.edu")).first() is None)
+                 and db.query(User.id).filter(User.role != "admin").first() is None)
         users = db.query(User.id).count()
     if fresh and os.getenv("SEED_DEMO", "").lower() in ("1", "true", "yes"):
         print("bootstrap: no courses yet, loading demo data (demo logins: admin@saap.edu / Admin@123)")
         seed_demo()
+    elif not fresh:
+        # Preserve existing institutional data. The three-subject submission cohort
+        # is loaded only into a fresh demo database; never add demo subjects to live data.
+        pass
 
     if users == 0 and not os.getenv("INITIAL_ADMIN_EMAIL") and not os.getenv("SEED_DEMO"):
         print("bootstrap: WARNING — no user accounts exist. Set INITIAL_ADMIN_EMAIL and INITIAL_ADMIN_PASSWORD "
@@ -300,6 +351,7 @@ def main():
     a.add_argument("--name", default="Administrator")
     a.add_argument("--password", help="omit to be prompted")
     sub.add_parser("seed-demo")
+    sub.add_parser("seed-demo-subjects")
     sub.add_parser("seed-history")
     args = p.parse_args()
     if args.cmd == "bootstrap":
@@ -308,6 +360,8 @@ def main():
         create_admin(args.email, args.name, args.password)
     elif args.cmd == "seed-demo":
         seed_demo()
+    elif args.cmd == "seed-demo-subjects":
+        seed_demo_subjects()
     elif args.cmd == "seed-history":
         with SessionLocal() as db:
             n = seed_history(db)

@@ -136,7 +136,10 @@ export default function MarksEntry() {
     setDirty((d) => new Set(d).add(sid));
   };
   const limit = isAtt ? a.sessions_held ?? 0 : a.max_marks;
-  const invalid = rows.some((r) => { const v = isAtt ? r.attended : r.marks; return v !== null && (v < 0 || v > limit); });
+  const invalid = rows.some((r) => {
+    const v = isAtt ? r.attended : r.marks;
+    return v !== null && (v < 0 || v > limit || (isAtt && !Number.isInteger(v)));
+  });
   const scored = rows.filter((r) => r.is_absent || (isAtt ? r.attended !== null : rubric ? Object.keys(r.criteria).length === rubric.criteria.length : r.marks !== null)).length;
   const valueOf = (r: Row) => (r.is_absent ? 0 : isAtt ? (r.attended === null ? null : (a.max_marks * r.attended) / (a.sessions_held || 1)) : rubric ? rubricMarks(rubric, r.criteria, a.max_marks) : r.marks);
 
@@ -173,7 +176,7 @@ export default function MarksEntry() {
             <div className="row"><h2>{a.title}</h2><StatusBadge status={a.status} /></div>
             <div className="small text-2" style={{ marginTop: 4 }}>
               {titleCase(a.component)} · max {a.max_marks} marks · {a.weightage}% of CP
-              {isAtt && ` · ${a.sessions_held} sessions held`}{rubric && ` · rubric “${rubric.title}”`} · {scored}/{rows.length} scored
+              {isAtt && ` · ${a.sessions_held} sessions held · enter attended sessions as a whole number from 0 to ${a.sessions_held}`}{rubric && ` · rubric “${rubric.title}”`} · {scored}/{rows.length} scored
             </div>
           </div>
           <div className="row">
@@ -190,7 +193,13 @@ export default function MarksEntry() {
         {!editable && <div className="alert alert-info" style={{ marginTop: 12 }}>
           {canEdit ? (a.status === "draft" ? "Open marking on this assessment to enter scores." : "Marking is closed. Reopen the assessment from the Assessments tab to make corrections.") : "View only."}
         </div>}
-        {invalid && <div className="alert alert-bad" style={{ marginTop: 12 }}>Some values are outside 0–{limit}. Fix the highlighted cells before saving.</div>}
+        {invalid && <div className="alert alert-bad" style={{ marginTop: 12 }}>{isAtt ? `Enter whole attendance counts from 0 to ${limit}.` : `Some values are outside 0–${limit}. Fix the highlighted cells before saving.`}</div>}
+        {isAtt && <div className="alert alert-info" style={{ marginTop: 12 }}>Attendance is calculated as attended sessions ÷ {a.sessions_held} sessions × 100. Mark a student as absent only when they were absent for the entire attendance assessment; an unentered value is not treated as confirmed attendance.</div>}
+        {isAtt && <div className="grid grid-3" style={{ marginTop: 12 }}>
+          <div className="stat-card"><div className="stat-label">Attendance recorded</div><div className="stat-value">{rows.filter(r => r.is_absent || r.attended !== null).length}/{rows.length}</div></div>
+          <div className="stat-card"><div className="stat-label">Average attendance</div><div className="stat-value">{(() => { const vals = rows.filter(r => !r.is_absent && r.attended !== null).map(r => 100 * (r.attended ?? 0) / (a.sessions_held || 1)); return vals.length ? `${(vals.reduce((x,y)=>x+y,0)/vals.length).toFixed(1)}%` : "—"; })()}</div></div>
+          <div className="stat-card"><div className="stat-label">Below 75%</div><div className="stat-value">{rows.filter(r => !r.is_absent && r.attended !== null && 100 * r.attended / (a.sessions_held || 1) < 75).length}</div></div>
+        </div>}
       </Card>
 
       <Card pad={false}>
@@ -200,7 +209,7 @@ export default function MarksEntry() {
             <thead><tr><th>Roll no</th><th>Student</th><th className="r">{isAtt ? `Attended / ${a.sessions_held}` : rubric ? "Rubric" : `Marks / ${a.max_marks}`}</th><th className="r">Marks</th><th className="r">%</th><th className="c">Absent</th><th>Feedback</th></tr></thead>
             <tbody>{shown.map((r, idx) => {
               const v = isAtt ? r.attended : r.marks;
-              const bad = v !== null && (v < 0 || v > limit);
+              const bad = v !== null && (v < 0 || v > limit || (isAtt && !Number.isInteger(v)));
               const marks = valueOf(r);
               const p = marks === null ? null : (100 * marks) / a.max_marks;
               return (
@@ -214,13 +223,13 @@ export default function MarksEntry() {
                       </button>
                     ) : (
                       <input className={`cell-input ${dirty.has(r.student_id) ? "dirty" : ""} ${bad ? "bad" : ""}`} data-cell={idx}
-                        inputMode="decimal" disabled={!editable || r.is_absent} aria-label={`${isAtt ? "Attended" : "Marks"} for ${r.name}`}
+                        type="number" inputMode={isAtt ? "numeric" : "decimal"} min={0} max={limit} step={isAtt ? 1 : "any"} disabled={!editable || r.is_absent} aria-label={`${isAtt ? "Attended" : "Marks"} for ${r.name}`}
                         value={v ?? ""} onKeyDown={(e) => onKeyDown(e, idx)}
                         onChange={(e) => {
                           const t = e.target.value.trim();
                           const n = t === "" ? null : Number(t);
                           if (t !== "" && Number.isNaN(n)) return;
-                          change(r.student_id, isAtt ? { attended: n === null ? null : Math.round(n) } : { marks: n });
+                          change(r.student_id, isAtt ? { attended: n } : { marks: n });
                         }} />
                     )}
                   </td>

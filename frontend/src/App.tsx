@@ -20,6 +20,10 @@ import Students from "./pages/faculty/Students";
 import Rubrics from "./pages/faculty/Rubrics";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentCourse from "./pages/student/StudentCourse";
+import StudentReport from "./pages/student/StudentReport";
+import CareerReadiness from "./pages/student/CareerReadiness";
+import StudyPlanner from "./pages/student/StudyPlanner";
+import Interventions from "./pages/faculty/Interventions";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import Users from "./pages/admin/Users";
 import Programs from "./pages/admin/Programs";
@@ -70,15 +74,20 @@ const byRole: Record<Role, RouteObject[]> = {
     { path: "ml", element: <MLModels /> },
     { path: "settings", element: <Settings /> },
     { path: "audit", element: <AuditLog /> },
+    { path: "interventions", element: <Interventions /> },
   ],
   faculty: [
     { index: true, element: <FacultyDashboard /> },
     { path: "courses", element: <Courses /> },
     courseRoutes,
     { path: "rubrics", element: <Rubrics /> },
+    { path: "interventions", element: <Interventions /> },
   ],
   student: [
     { index: true, element: <StudentDashboard /> },
+    { path: "my/report", element: <StudentReport /> },
+    { path: "my/career", element: <CareerReadiness /> },
+    { path: "my/planner", element: <StudyPlanner /> },
     { path: "my/courses/:courseId", element: <StudentCourse /> },
   ],
 };

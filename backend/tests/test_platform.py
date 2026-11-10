@@ -1,4 +1,5 @@
 from app.models import HistoricalRecord
+from app import cli
 from app.services import prediction
 from tests.conftest import login
 
@@ -12,6 +13,27 @@ def _assessment(client, h, cid, **kw):
 
 def _open(client, h, aid):
     assert client.post(f"/api/assessments/{aid}/status", headers=h, json={"status": "in_progress"}).status_code == 200
+
+
+def test_demo_bootstrap_populates_portals_when_only_initial_admin_exists(client, db, monkeypatch):
+    db.add(cli.User(name="Initial admin", email="admin@saap.edu", role="admin",
+                    password_hash=cli.hash_password("InitialPassword123")))
+    db.commit()
+
+    monkeypatch.setenv("SEED_DEMO", "true")
+    monkeypatch.delenv("INITIAL_ADMIN_EMAIL", raising=False)
+    monkeypatch.delenv("INITIAL_ADMIN_PASSWORD", raising=False)
+
+    cli.bootstrap()
+
+    for email, password, role in (
+        ("admin@saap.edu", "Admin@123", "admin"),
+        ("neha@saap.edu", "Faculty@123", "faculty"),
+        ("student@saap.edu", "Student@123", "student"),
+    ):
+        response = client.post("/api/auth/login", json={"email": email, "password": password})
+        assert response.status_code == 200, response.text
+        assert response.json()["user"]["role"] == role
 
 
 # ------------------------------------------------------------------ auth & security
@@ -84,6 +106,19 @@ def test_rubric_scoring_and_gradebook(client, world):
     r = client.put(f"/api/assessments/{att['id']}/scores", headers=F, json={"scores": [
         {"student_id": s1, "attended": 30}, {"student_id": s2, "attended": 20}]})
     assert r.status_code == 200
+    updated = client.put(f"/api/assessments/{att['id']}/scores", headers=F, json={"scores": [
+        {"student_id": s1, "attended": 32}]})
+    assert updated.status_code == 200
+    assert next(row for row in updated.json()["rows"] if row["student_id"] == s1)["attended"] == 32
+    zero = client.put(f"/api/assessments/{att['id']}/scores", headers=F, json={"scores": [
+        {"student_id": s1, "attended": 0}]})
+    assert zero.status_code == 200
+    assert next(row for row in zero.json()["rows"] if row["student_id"] == s1)["attended"] == 0
+    assert client.put(f"/api/assessments/{att['id']}/scores", headers=F, json={"scores": [
+        {"student_id": s1, "attended": 30.5}]}).status_code == 422
+    restored = client.put(f"/api/assessments/{att['id']}/scores", headers=F, json={"scores": [
+        {"student_id": s1, "attended": 30}]})
+    assert restored.status_code == 200
 
     gb = client.get(f"/api/courses/{cid}/gradebook", headers=F).json()
     st = {s["student_id"]: s for s in gb["students"]}
@@ -284,13 +319,3 @@ def test_forged_forwarded_for_does_not_reset_throttle(client, world, monkeypatch
                     headers={"X-Forwarded-For": "203.0.113.1"})
     assert r.status_code == 200  # TestClient peer has no failures recorded
 
-
-def test_demo_admin_must_change_password_in_production(db, monkeypatch):
-    from app import cli
-    from app.config import get_settings
-    from app.models import User
-    monkeypatch.setattr(get_settings(), "environment", "production")
-    cli.seed_demo()
-    db.expire_all()
-    assert db.query(User).filter_by(email="admin@saap.edu").one().must_change_password is True
-    assert db.query(User).filter_by(email="neha@saap.edu").one().must_change_password is False

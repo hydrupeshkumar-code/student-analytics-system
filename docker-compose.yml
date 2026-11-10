@@ -1,4 +1,4 @@
-# Production-style stack: MySQL 8 + the SAAP app (API + React UI on one port).
+# Production-style stack: MySQL 8 + the Student Platform app (API + React UI on one port).
 # 1. cp .env.example .env  and set strong secrets
 # 2. docker compose up -d --build
 # 3. docker compose exec app python -m app.cli create-admin --email you@college.edu --name "Exam Cell"
