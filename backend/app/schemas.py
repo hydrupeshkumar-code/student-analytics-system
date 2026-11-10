@@ -276,6 +276,14 @@ class AssessmentUpdate(BaseModel):
     due_date: date | None = None
     co_ids: list[int] | None = None
 
+    @field_validator("title", "max_marks", "weightage")
+    @classmethod
+    def not_null(cls, v):
+        # these may be left out of a partial update, but not cleared
+        if v is None:
+            raise ValueError("cannot be empty")
+        return v
+
 
 class AssessmentOut(ORM):
     id: int

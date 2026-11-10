@@ -240,6 +240,9 @@ def seed_demo():
 
         # The submission/demo cohort intentionally contains exactly three subjects.
         # Assessment maximums and CP weightages match the requested 30/30/40 breakup.
+        # Attendance is kept as a running register at 0% weightage: it is recorded, shown to
+        # students and used for attendance risk without changing the 30/30/40 CP split.
+        ATTENDANCE = ("Attendance", "attendance", 10, 0, None, [], "in_progress", 0, 0)
         pc = build_course("PC301", "Professional Communication", anita, "2026-27", 5, [
             ("CO1", "Write clear professional emails, summaries and formal documents."),
             ("CO2", "Adapt messages to audience, purpose and workplace context."),
@@ -251,6 +254,7 @@ def seed_demo():
                ("Mid-Term Examination", "quiz", 30, 30, None, ["CO1", "CO2"], "completed", 72, 16),
                ("Internal Assessment", "assignment", 30, 30, communication_rubric, ["CO2", "CO3"], "completed", 70, 18),
                ("Final Examination", "practical", 40, 40, communication_rubric, ["CO1", "CO3", "CO4"], "completed", 74, 15),
+               ATTENDANCE,
            ], credits=2)
 
         ds = build_course("CS304", "Data Structures", neha, "2026-27", 5, [
@@ -264,6 +268,7 @@ def seed_demo():
                ("Mid-Term Examination", "quiz", 30, 30, None, ["CO1", "CO2"], "completed", 68, 20),
                ("Internal Assessment", "assignment", 30, 30, assign_rubric, ["CO2", "CO3"], "completed", 66, 22),
                ("Final Examination", "practical", 40, 40, lab_rubric, ["CO2", "CO3", "CO4"], "completed", 70, 20),
+               ATTENDANCE,
            ], credits=4)
 
         cn = build_course("CS305", "Computer Networks", ravi, "2026-27", 5, [
@@ -277,6 +282,7 @@ def seed_demo():
                ("Mid-Term Examination", "quiz", 30, 30, None, ["CO1", "CO2"], "completed", 70, 18),
                ("Internal Assessment", "assignment", 30, 30, assign_rubric, ["CO2", "CO3"], "completed", 64, 22),
                ("Final Examination", "practical", 40, 40, lab_rubric, ["CO3", "CO4"], "completed", 72, 19),
+               ATTENDANCE,
            ], credits=4)
 
         n_hist = seed_history(db)
@@ -284,7 +290,7 @@ def seed_demo():
         for c in (pc, ds, cn):
             prediction.predict_course(db, c)
         db.commit()
-        print(f"Demo data loaded: 4 staff, {len(students)} students, 3 courses (PC, DS, CN; assessment breakup 30/30/40), {n_hist} synthetic history rows.")
+        print(f"Demo data loaded: 4 staff, {len(students)} students, 3 courses (PC, DS, CN; assessment breakup 30/30/40, plus an attendance register), {n_hist} synthetic history rows.")
         print("Logins: admin@saap.edu / Admin@123 · neha@saap.edu / Faculty@123 · student@saap.edu / Student@123")
 
 

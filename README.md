@@ -38,7 +38,7 @@ Student Platform brings the **CP** (Continuous Process: quizzes, assignments, pr
 - Separate attendance-risk and internal-assessment-risk indicators. The transparent 0–100 risk index is calculated independently for attendance and quiz/assignment/practical marks; the overall ML early-warning signal remains separate.
 - Internship-oriented, personalised feedback linked to current subjects and weak areas. Examples include Python mini-projects with GitHub/README/tests and professional-email, self-introduction and presentation practice.
 - Per-course component breakdown with class averages, rubric feedback (selected level per criterion), CO progress, early-warning guidance, and final grade once results are published.
-- Students see only *completed* assessments and *published* NCP results. No final grade is shown while any CP marking is still open.
+- Students see only *completed* assessments and *published* NCP results, plus their attendance so far while the attendance register is still open. No final grade is shown while any CP marking is still open.
 
 **Administrator**
 - Institution overview, user management (single and bulk CSV import with one-time temporary passwords), programs and POs (with NBA PO1–PO12 presets), courses and faculty assignment, program-level PO attainment, academic settings (grade bands, pass rules, thresholds), model training and versioning, and an audit log.
@@ -123,7 +123,7 @@ docker compose exec app python -m app.cli create-admin --email examcell@college.
 
 Before starting, edit `.env` and set `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` and `JWT_SECRET`. Generate the secret with `python3 -c "import secrets; print(secrets.token_urlsafe(48))"`.
 
-The app listens on port 8000. Put it behind HTTPS (nginx, Caddy or a cloud load balancer) and set `CORS_ORIGINS` to your public URL. Migrations run automatically on start. Back up the `mysql-data` volume, plus `ml-models` if you want to keep trained model files.
+The app listens on port 8000. Put it behind HTTPS (nginx, Caddy or a cloud load balancer) and set `CORS_ORIGINS` to your public URL. `TRUSTED_PROXY_HOPS` (default 1 in the image) is the number of proxies in front of the app that append to `X-Forwarded-For`; login throttling and the audit log use the client IP found that many entries from the right. Set it to match your setup, since a value that is too high lets clients forge their IP. Migrations run automatically on start. Back up the `mysql-data` volume, plus `ml-models` if you want to keep trained model files.
 
 Going live:
 1. Create programs and POs, then bulk-import users (Admin → Users → CSV template).

@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # Login throttling: max failed attempts per (email, ip) inside the window
     login_max_attempts: int = 5
     login_window_seconds: int = 300
+    # Number of reverse proxies in front of the app that append to X-Forwarded-For (Render: 1).
+    # 0 = ignore the header. The client IP is read that many entries from the right, because
+    # entries further left are supplied by the client and can be forged.
+    trusted_proxy_hops: int = 0
 
     model_dir: Path = BASE_DIR / "ml_models"
     max_upload_bytes: int = 5 * 1024 * 1024
